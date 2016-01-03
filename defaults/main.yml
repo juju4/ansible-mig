@@ -1,0 +1,58 @@
+---
+
+mig_mode: server
+#mig_mode: client
+
+### server
+mig_user: "{{ ansible_ssh_user }}"
+mig_gover: 1.5.2
+mig_gopath: "/home/{{ mig_user }}/go"
+mig_src: "{{ mig_gopath }}/src/mig.ninja/mig"
+mig_api_host: localhost
+mig_api_port: 51664
+
+mig_db_migadmin_pass: xxx
+mig_db_migapi_pass: xxx
+mig_db_migscheduler_pass: xxx
+
+mig_rabbitmq_host: localhost
+mig_rabbitmq_port: 5672
+mig_rabbitmq_adminpass: xxx
+mig_rabbitmq_schedpass: xxx
+mig_rabbitmq_agentpass: xxx
+mig_rabbitmq_workrpass: xxx
+
+mig_rabbitmq_certinfo: '/C=US/ST=CA/L=San Francisco/O=MIG Ansible'
+mig_rabbitmq_certduration: 1095
+mig_rabbitmq_rsakeysize: 2048
+mig_rabbitmq_cadir: "/home/{{ mig_user }}/ca"
+mig_rabbitmq_cakey: "{{ mig_rabbitmq_cadir }}/ca.key"
+mig_rabbitmq_cacertcrt: "{{ mig_rabbitmq_cadir }}/ca.crt"
+#mig_rabbitmq_cacert: "{{ mig_rabbitmq_cadir }}/cacert.cert"
+mig_rabbitmq_serverdir: "/home/{{ mig_user }}/server"
+mig_rabbitmq_serverkey: "{{ mig_rabbitmq_serverdir }}/server-{{ ansible_hostname }}.key"
+mig_rabbitmq_servercsr: "{{ mig_rabbitmq_serverdir }}/server-{{ ansible_hostname }}.csr"
+mig_rabbitmq_servercrt: "{{ mig_rabbitmq_serverdir }}/server-{{ ansible_hostname }}.crt"
+mig_rabbitmq_clientdir: "/home/{{ mig_user }}/client"
+
+#mig_rabbitmq_serverp12: "{{ mig_rabbitmq_serverdir }}/server-{{ ansible_hostname }}-keycert.p12"
+#mig_rabbitmq_clientkey: "{{ mig_rabbitmq_clientdir }}/client-{{ ansible_hostname }}.key"
+#mig_rabbitmq_clientreq: "{{ mig_rabbitmq_clientdir }}/client-{{ ansible_hostname }}-req.pem"
+#mig_rabbitmq_clientcert: "{{ mig_rabbitmq_clientdir }}/client-{{ ansible_hostname }}-cert.pem"
+#mig_rabbitmq_clientp12: "{{ mig_rabbitmq_clientdir }}/client-{{ ansible_hostname }}-keycert.p12"
+#mig_rabbitmq_keypass: MySecretPassword
+
+## To switch true, you need valid public signed certificate, not self-certificate
+mig_nginx_use_ssl: false
+mig_nginx_cert: /path/to/cert
+mig_nginx_key: /path/to/key
+
+## do you want to create investigator1 gpg user?
+mig_gpg_example: true
+
+### client
+#mig_src: "{{ mig_gopath }}/src/mig.ninja/mig"
+#mig_agent_bin: "{{ mig_src }}/{{ ansible_os_family }}/{{ ansible_architecture }}/mig-agent-latest"
+#mig_api_host: localhost
+#mig_api_port: 51664
+#mig_path: 

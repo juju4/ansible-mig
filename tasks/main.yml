@@ -1,0 +1,8 @@
+---
+
+- include: server.yml
+  when: mig_mode == 'server'
+
+- include: client.yml
+  when: mig_mode == 'client'
+

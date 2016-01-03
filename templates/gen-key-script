@@ -1,0 +1,12 @@
+%echo Generating a basic OpenPGP key
+Key-Type: 1
+Key-Length: 2048
+Subkey-Type: 1
+Subkey-Length: 2048
+Name-Real: Investigator1
+Name-Email: {{ inv1_email }}
+Expire-Date: 360
+%pubring investigator1.pub
+%secring investigator1.sec
+%commit
+%echo done

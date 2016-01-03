@@ -1,0 +1,54 @@
+---
+
+- set_fact:
+    mig_home: '/root/'
+  when: mig_user == 'root'
+- set_fact:
+    mig_home: "/home/{{ mig_user }}"
+  when: mig_user != 'root'
+
+- set_fact:
+    inv1_email: investigator1@example.com
+
+#- debug: var=mig_user
+#- debug: var=mig_home
+
+- file: dest={{ mig_home }}/.gnupg state=directory mode=0700 owner="{{ mig_user }}"
+- name: set defaut gpg options
+  copy: src=gpg.conf dest="{{ mig_home }}/.gnupg/gpg.conf" mode=0600 owner="{{ mig_user }}"
+- name: copy default template for gpg key generation
+  template: src=gen-key-script dest="{{ mig_home }}/.gnupg/gen-key-script" mode=0600 owner="{{ mig_user }}"
+- name: check existing secret key
+  command: gpg --list-secret-keys
+  changed_when: false
+  become: yes
+  become_user: "{{ mig_user }}"
+  register: gpgkeys
+#- debug: var=gpgkeys
+- name: generate example investigator key
+  command: "gpg --batch --gen-key {{ mig_home }}/.gnupg/gen-key-script chdir={{ mig_home }}"
+  become: yes
+  become_user: "{{ mig_user }}"
+  when: gpgkeys.stdout == ""
+  register: genkey
+#- debug: var=genkey
+- name: import generated keys
+  command: "gpg --import {{ mig_home }}/investigator1.pub {{ mig_home }}/investigator1.sec"
+  become: yes
+  become_user: "{{ mig_user }}"
+  when: gpgkeys.stdout == ""
+- name: get user gpg fingerprint
+  shell: "gpg --fingerprint {{ inv1_email }} | awk -F= '/Key fingerprint/ { gsub(/ /,\"\", $2); print $2 }'"
+  changed_when: false
+  register: mig_user_fingerprint
+  become: yes
+  become_user: "{{ mig_user }}"
+- name: create user migrc
+  template: src=migrc dest="{{ mig_home }}/.migrc" mode=0600 owner="{{ mig_user }}"
+  when: gpgkeys.stdout == ""
+- name: get user armored public key
+  shell: "gpg --export -a {{ inv1_email }} > {{ mig_home }}/investigator1_pubkey.asc"
+  changed_when: false
+  become: yes
+  become_user: "{{ mig_user }}"
+

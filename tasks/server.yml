@@ -1,0 +1,310 @@
+---
+- name: Check to see if specified Go version is already installed
+  stat: path=/usr/local/go-{{ mig_gover }}
+  register: go_installed
+
+- include: debian.yml
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
+
+- include: redhat.yml
+  when: ansible_os_family == "RedHat" or ansible_distribution == 'CentOS' or ansible_distribution == 'Red Hat Enterprise Linux'
+
+- include: golang.yml
+  when: not go_installed.stat.exists
+
+- name: Update PATH and GOPATH in bashrc - root
+  lineinfile:
+    dest: "{{ item.d }}"
+    line: "{{ item.l }}"
+    regexp: "{{ item.r }}"
+    insertafter: EOF
+    state: present
+    create: False
+  with_items:
+    - { d: "/root/.bashrc", r: "go/bin", l: 'export PATH=$PATH\:/usr/local/go/bin' }
+    - { d: "/root/.bashrc", r: "GOPATH={{ mig_gopath }}", l: 'export GOPATH={{ mig_gopath }}' }
+## on centos7, missing this for fpm
+    - { d: "/root/.bashrc", r: "/usr/local/bin", l: 'export PATH=$PATH\:/usr/local/bin' }
+- stat: path="/home/{{ mig_user }}/.bashrc"
+  register: homemiguser
+- name: Update PATH and GOPATH in bashrc - mig_user
+  lineinfile:
+    dest: "{{ item.d }}"
+    line: "{{ item.l }}"
+    regexp: "{{ item.r }}"
+    insertafter: EOF
+    state: present
+    create: False
+  with_items:
+    - { d: "/home/{{ mig_user }}/.bashrc", r: "go/bin", l: 'export PATH=$PATH\:/usr/local/go/bin' }
+    - { d: "/home/{{ mig_user }}/.bashrc", r: "GOPATH={{ mig_gopath }}", l: 'export GOPATH={{ mig_gopath }}' }
+## on centos7, missing this for fpm
+    - { d: "/home/{{ mig_user }}/.bashrc", r: "/usr/local/bin", l: 'export PATH=$PATH\:/usr/local/bin' }
+  when: homemiguser.stat.exists
+
+## http://mig.mozilla.org/doc/configuration.rst.html
+#- stat: path=/home/{{ mig_user }}/mig
+#  register: migrepo
+#- name: Git clone MIG
+#  git:
+#    #accept_hostkey=yes ## if using ssh
+#    repo=https://github.com/mozilla/mig.git
+#    dest=/home/{{ mig_user }}/mig
+#  become: yes
+#  become_user: "{{ mig_user }}"
+#  when: not migrepo.stat.exists
+
+## FIXME! not idempotent
+## No Golang modules for ansible currently
+- name: Get mig repository through 'go get'
+  command: "{{ item }}"
+  with_items:
+    - "go get mig.ninja/mig"
+#    - "go get code.google.com/p/winsvc/eventlog"
+#    - "go get github.com/golang/sys/tree/master/windows/svc/eventlog"   ## NOK/FIXME!
+    - "go get github.com/mozilla/masche/cresponse"
+## = dependencies where include as submodule in vendor/github.com
+### FIXME! mig/src/code.google.com/p/go.crypto/openpgp/read.go:198: multiple-value s.Decrypt() in single-value context
+##    - "go get -u code.google.com/p/go.crypto/openpgp"
+#    - "go get -u github.com/streadway/amqp"
+#    - "go get -u github.com/lib/pq"
+#    - "go get -u github.com/howeyc/fsnotify"
+#    - "go get -u code.google.com/p/gcfg"
+#    - "go get -u github.com/gorilla/mux"
+#    - "go get -u github.com/jvehent/cljs"
+#    - "go get -u bitbucket.org/kardianos/osext"
+#    - "go get -u bitbucket.org/kardianos/service"
+  become: yes
+  become_user: "{{ mig_user }}"
+  environment:
+    GOPATH: "{{ mig_gopath }}"
+
+- name: install gem fpm for agent packaging
+  gem: name=fpm state=present user_install=no
+
+- name: Set Agent configuration - mig-agent.cfg
+#  template: src=mig-agent-conf.go dest=/home/{{ mig_user }}/mig/conf/mig-agent-conf.go owner={{ mig_user }}
+  command: "rsync -ci {{ mig_src }}/conf/mig-agent.cfg.inc {{ mig_src }}/conf/mig-agent.cfg"
+  register: rsync_result
+  changed_when: 'rsync_result.stdout != ""'
+  become: yes
+  become_user: "{{ mig_user }}"
+- name: update agent configuration - mig-agent.cfg
+#  replace: dest="{{ mig_src }}/conf/mig-agent.cfg" regexp="{{ item.re }}" replace="{{ item.rep }}"
+  replace: dest="{{ mig_src }}/conf/mig-agent.cfg.inc" regexp="{{ item.re }}" replace="{{ item.rep }}"
+  with_items:
+    - { re: 'api             = \"http://localhost:1664/api/v1/\"', rep: 'api             = \"http://{{ mig_api_host }}:{{ mig_api_port }}/api/v1/\"' }
+
+- name: Set Agent configuration - mig-agent-conf.go
+  command: "rsync -ci {{ mig_src }}/conf/mig-agent-conf.go.inc {{ mig_src }}/conf/mig-agent-conf.go"
+  register: rsync_result
+  changed_when: 'rsync_result.stdout != ""'
+  become: yes
+  become_user: "{{ mig_user }}"
+- name: update agent configuration mig-agent-conf.go
+#  replace: dest="{{ mig_src }}/conf/mig-agent-conf.go" regexp="{{ item.re }}" replace="{{ item.rep }}"
+  replace: dest="{{ mig_src }}/conf/mig-agent-conf.go.inc" regexp="{{ item.re }}" replace="{{ item.rep }}"
+  with_items:
+    - { re: '^var APIURL string = \"http://localhost:1664/api/v1/\"', rep: 'var APIURL string = \"http://{{ mig_api_host }}:{{ mig_api_port }}/api/v1/\"' }
+    - { re: '^var AMQPBROKER string = \"amqp://guest:guest@localhost:5672/\"', rep: 'var AMQPBROKER string = \"http://agent:{{ mig_rabbitmq_agentpass }}@{{ mig_rabbitmq_host }}:{{ mig_rabbitmq_port }}/\"' }
+
+#- stat: path="{{ mig_gopath }}/pkg/linux_amd64/mig.ninja/mig.a"
+- stat: path="{{ mig_src }}/bin/linux/amd64/mig-scheduler"
+  register: migbin
+- name: Build MIG platform
+  command: "make chdir={{ mig_src }}"
+#  command: "make deb-server chdir={{ mig_src }}"        ## debian/ubuntu package, FIXME! need fpm but not php5-fpm
+  environment:
+    GOPATH: "{{ mig_gopath }}"
+    #GOPATH: "{{ mig_gopath }}:{{ mig_src }}/vendor"
+  become: yes
+  become_user: "{{ mig_user }}"
+  when: not migbin.stat.exists
+
+## either this or default make
+#- name: Build MIG components
+#  command: "make {{ item }} chdir={{ mig_src }}"
+#  with_items:
+#    - mig-scheduler
+#    - api
+#    - worker-agent-intel
+#    - worker-compliance-item
+#  environment:
+#    GOPATH: "{{ mig_gopath }}"
+#
+- name: Create local database
+  postgresql_db: name=mig ## OK
+#  postgresql_db: name=mig template="{{ mig_src }}/database/schema.sql"  ## NOK 'PostgreSQL does not support role with more than 1 dots'
+  become: yes
+  become_user: postgres
+
+- name: Create local database user migadmin
+  postgresql_user: db=mig name="migadmin" password="{{ mig_db_migadmin_pass }}" priv=ALL role_attr_flags=NOSUPERUSER,INHERIT,NOCREATEROLE,NOCREATEDB,LOGIN
+  become: yes
+  become_user: postgres
+- name: Create local database users
+#  command: {{ mig_src }}/src/mig/database/createlocaldb.sh
+#  command: {{ mig_src }}/src/mig/database/createremotedb.sh
+## which priv? ALL ok but...
+#  postgresql_user: name="{{ item.u }}" password="{{ item.p }}" role_attr_flags=NOSUPERUSER,INHERIT,NOCREATEROLE,NOCREATEDB,LOGIN
+  postgresql_user: db=mig name="{{ item.u }}" password="{{ item.p }}" role_attr_flags=NOSUPERUSER,INHERIT,NOCREATEROLE,NOCREATEDB,LOGIN priv=ALL
+#  postgresql_user: db=mig name="{{ item.u }}" password="{{ item.p }}" role_attr_flags=NOSUPERUSER,INHERIT,NOCREATEROLE,NOCREATEDB,LOGIN priv=CONNECT/investigators:SELECT  ## partial, also actions, agents...
+  with_items:
+    - { u: migapi, p: "{{ mig_db_migapi_pass }}" }
+    - { u: migscheduler, p: "{{ mig_db_migscheduler_pass }}" }
+  become: yes
+  become_user: postgres
+
+- stat: path=/home/{{ mig_user }}/.dbinit
+  register: dbinit
+- name: loading default db schema
+#  shell: "psql mig < {{ mig_src }}/database/schema.sql"
+## NOK: owner of all databases is postgres, not migadmin...
+#  command: "psql -d mig -f {{ mig_src }}/database/schema.sql"
+  command: "psql -d mig -f {{ mig_src }}/database/schema.sql"
+  become: yes
+  become_user: postgres        ## user can't access schema.sql
+  when: not dbinit.stat.exists
+- file: dest=/home/{{ mig_user }}/.dbinit state=touch
+  when: not dbinit.stat.exists
+
+
+- file: dest=/etc/mig state=directory mode=0755
+
+- stat: path="/etc/mig/scheduler.cfg"
+  register: schedulercfg
+- name: Set Scheduler configuration
+  command: "rsync -ci {{ mig_src }}/conf/scheduler.cfg.inc /etc/mig/scheduler.cfg"
+  register: rsync_result
+  changed_when: 'rsync_result.stdout != ""'
+  when: not schedulercfg.stat.exists
+
+- name: update scheduler configuration
+  replace: dest="/etc/mig/scheduler.cfg" regexp="{{ item.re }}" replace="{{ item.rep }}"
+  with_items:
+    - { re: 'password = \"123456\"', rep: 'password = \"{{ mig_db_migscheduler_pass }}\"' }
+    - { re: 'user  = \"guest\"', rep: 'user  = \"scheduler\"' }
+    - { re: 'pass  = \"guest\"', rep: 'pass  = \"{{ mig_rabbitmq_schedpass }}\"' }
+#    - { re: '^;   usetls  = true', rep: '   usetls  = true' }
+    - { re: '^;   cacert  = \"/path/to/cacert.pem\"', rep: '   cacert  = \"/etc/mig/ca.crt\"' }
+    - { re: '^;   tlscert = \"/path/to/cert.pem\"', rep: '   tlscert  = \"/etc/mig/scheduler.crt\"' }
+    - { re: '^;   tlskey  = \"/path/to/key.pem\"', rep: '   tlskey  = \"/etc/mig/scheduler.key\"' }
+  notify:
+    - restart supervisor
+- name: update scheduler configuration - ssl
+  replace: dest="/etc/mig/scheduler.cfg" regexp="{{ item.re }}" replace="{{ item.rep }}"
+  with_items:
+    - { re: '^   usetls  = true', rep: '   usetls  = false' }
+  notify:
+    - restart supervisor
+  when: mig_nginx_use_ssl is defined and not mig_nginx_use_ssl
+
+- file: dest=/var/cache/mig owner={{ mig_user }} mode=0755 state=directory
+
+- include: rabbitmq-certificates.yml
+
+## FIXME! should execute role RabbitMQ here...
+
+- include: rabbitmq-configure.yml
+
+- stat: path="/etc/mig/api.cfg"
+  register: apicfg
+- name: Set API configuration
+  command: "rsync -ci {{ mig_src }}/conf/api.cfg.inc /etc/mig/api.cfg"
+  register: rsync_result
+  changed_when: 'rsync_result.stdout != ""'
+  when: not apicfg.stat.exists
+- name: update api configuration
+  replace: dest="/etc/mig/api.cfg" regexp="{{ item.re }}" replace="{{ item.rep }}"
+  with_items:
+    - { re: 'password = \"123456\"', rep: 'password = \"{{ mig_db_migapi_pass }}\"' }
+    - { re: 'port = 12345', rep: 'port = {{ mig_api_port }}' }
+    - { re: 'host = \"http://localhost:12345\"', rep: 'host = \"http://localhost:{{ mig_api_port }}\"' }
+  notify:
+    - restart supervisor
+
+- name: set nginx as reverse proxy to access MIG API - ssl
+  template: src=mig-ssl.conf dest={{ nginx_conf }}/mig-ssl.conf mode=0644
+  notify:
+    - restart nginx
+  when: mig_nginx_use_ssl is defined and mig_nginx_use_ssl
+- name: active nginx configuration - ssl
+  file: src=/etc/nginx/sites-available/mig-ssl.conf dest=/etc/nginx/sites-enabled/mig-ssl.conf state=link
+  notify:
+    - restart nginx
+  when: mig_nginx_use_ssl is defined and mig_nginx_use_ssl and (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
+
+- name: set nginx as reverse proxy to access MIG API - no ssl
+  template: src=mig.conf dest={{ nginx_conf }}/mig.conf mode=0644
+  notify:
+    - restart nginx
+  when: mig_nginx_use_ssl is defined and not mig_nginx_use_ssl
+- name: active nginx configuration - no ssl
+  file: src=/etc/nginx/sites-available/mig.conf dest=/etc/nginx/sites-enabled/mig.conf state=link
+  notify:
+    - restart nginx
+  when: mig_nginx_use_ssl is defined and not mig_nginx_use_ssl and (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
+
+- name: disable nginx default website
+  file: dest=/etc/nginx/sites-enabled/default state=absent
+  notify:
+    - restart nginx
+
+- name: set supervisor config to manage MIG daemons
+  template: src=supervisord.ini dest={{ supervisor_confdir }}/{{ supervisor_targetconf }} mode=0644
+  notify:
+    - restart supervisor
+
+- include: gpg-example.yml
+  when: mig_gpg_example is defined and mig_gpg_example
+
+- name: Ensure supervisor is enabled and started
+  service: name="{{ supervisor_service }}" state=started enabled=yes
+- name: Ensure nginx is enabled and started
+  service: name=nginx state=started enabled=yes
+
+
+## FIXME! globbing not working = ignore_errors
+- stat: path="{{ mig_src }}/mig-agent_*.deb"
+  register: migagentpkg1
+#- debug: var=migagentpkg1
+- name: Build MIG platform agent packages - deb
+  command: "make deb-agent chdir={{ mig_src }}"
+  environment:
+    GOPATH: "{{ mig_gopath }}"
+    BUILDENV: prod
+  become: yes
+  become_user: "{{ mig_user }}"
+  when: not migagentpkg1.stat.exists
+  ignore_errors: true
+- stat: path="{{ mig_src }}/mig-agent_*.rpm"
+  register: migagentpkg2
+- name: Build MIG platform agent packages - rpm
+  command: "make rpm-agent chdir={{ mig_src }}"
+  environment:
+    GOPATH: "{{ mig_gopath }}"
+    BUILDENV: prod
+  become: yes
+  become_user: "{{ mig_user }}"
+  when: not migagentpkg2.stat.exists
+  ignore_errors: true
+#    - "make dmg-agent"     ## only on MacOS
+#    - "make msi-agent"     ## Need wixl/no package
+- stat: path="{{ mig_src }}/bin/linux/amd64/mig-agent-latest.exe"
+  register: migagentbin2
+## FIXME! fails silently
+- name: Build MIG platform cross-platform agent
+#  command: "make mig-agent msi-agent chdir={{ mig_src }}"
+  command: "make mig-agent chdir={{ mig_src }}"
+  environment:
+    GOPATH: "{{ mig_gopath }}"
+    BUILDENV: prod
+    OS: windows
+    ARCH: amd64
+  become: yes
+  become_user: "{{ mig_user }}"
+  when: not migagentbin2.stat.exists
+
+#- name: retrieve mig-agent to deploy? what about libraries? (vdso, pthread, c)
+#  fetch: src="{{ mig_src }}/bin/linux/amd64/mig-agent-latest" dest=migagent flat=yes
+

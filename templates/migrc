@@ -1,0 +1,11 @@
+[api]
+{% if mig_nginx_use_ssl is defined and mig_nginx_use_ssl -%}
+        url = "https://localhost/api/v1/"
+{% else -%}
+        url = "http://localhost/api/v1/"
+{% endif %}
+
+[gpg]
+        home = "/home/{{ mig_user }}/.gnupg/"
+        keyid = "{{ mig_user_fingerprint.stdout }}"
+

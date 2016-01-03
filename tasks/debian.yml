@@ -1,0 +1,28 @@
+---
+
+- name: apt | MIG dependencies
+  apt: name={{item}} state=present update_cache=yes
+  with_items:
+#    - golang ## 1.2
+    - git
+    - libreadline-dev
+    - mercurial
+    - python-psycopg2
+    - gpgv2
+    - nginx
+    - supervisor
+    - rng-tools
+## check separated role
+    - postgresql-9.3
+## agent packaging
+    - ruby
+    - ruby-dev
+#   - wixl          ## FIXME! only on debian sid/stretch (Windows packaging in msi)
+    - librpmbuild3
+    - rpm
+
+- set_fact:
+    nginx_conf: /etc/nginx/sites-available
+    supervisor_confdir: /etc/supervisor/conf.d
+    supervisor_targetconf: mig.conf
+    supervisor_service: supervisor

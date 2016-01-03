@@ -1,0 +1,44 @@
+---
+## partial conversion of create_rabbitmq_config.sh
+
+- rabbitmq_user: user=guest
+                 state=absent
+
+- rabbitmq_vhost: name=mig state=present
+
+## FIXME! not idempotent (none of the rabbitmq_user)
+- rabbitmq_user: user=admin
+                 password="{{ mig_rabbitmq_adminpass }}"
+                 tags="admin administrator"
+                 vhost=mig
+                 state=present
+
+- rabbitmq_user: user=scheduler
+                 password="{{ mig_rabbitmq_schedpass }}"
+                 configure_priv='^(toagents|toschedulers|toworkers|mig\.agt\..*)$'
+                 write_priv='^(toagents|toworkers|mig\.agt\.(heartbeats|results))$'
+                 read_priv='^(toagents|toschedulers|toworkers|mig\.agt\.(heartbeats|results))$'
+                 vhost=mig
+                 state=present
+
+- rabbitmq_user: user=agent
+                 password="{{ mig_rabbitmq_agentpass }}"
+                 configure_priv='^mig\.agt\..*$'
+                 write_priv='^(toschedulers|mig\.agt\..*)$'
+                 read_priv='^(toagents|mig\.agt\..*)$'
+                 vhost=mig
+                 state=present
+
+- rabbitmq_user: user=worker
+                 password="{{ mig_rabbitmq_workrpass }}"
+                 configure_priv='^migevent\..*$'
+                 write_priv='^migevent(|\..*)$'
+                 read_priv='^(toworkers|migevent\..*)$'
+                 vhost=mig
+                 state=present
+
+# harden rabbitmq config
+
+- name: set mirroring policy
+  rabbitmq_policy: vhost=mig name=mig-mirror-all pattern='"^(toschedulers|toagents|toworkers|mig(|event))\.' tags="ha-mode=all"
+

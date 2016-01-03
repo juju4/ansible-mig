@@ -1,0 +1,77 @@
+---
+
+- name: RabbitMQ openssl configuration
+#  copy: src=files/rabbitmq-openssl.cnf dest=/home/{{ mig_user }}/rabbitmq-openssl.cnf mode=0600 owner={{ mig_user }}
+  template: src=openssl.cnf dest=/home/{{ mig_user }}/rabbitmq-openssl.cnf mode=0600 owner={{ mig_user }}
+
+- file: dest="{{ item }}" state=directory mode=0700 owner="{{ mig_user }}"
+  with_items:
+    - "{{ mig_rabbitmq_cadir }}"
+    - "{{ mig_rabbitmq_cadir }}/certs"
+    - "{{ mig_rabbitmq_serverdir }}"
+    - "{{ mig_rabbitmq_clientdir }}"
+
+- lineinfile: dest="{{ mig_rabbitmq_cadir }}/serial" line=1000 create=yes
+- file: dest="{{ mig_rabbitmq_cadir }}/index" state=touch
+
+- stat: path="{{ mig_rabbitmq_servercrt }}"
+  register: servercrt
+- name: Create RabbitMQ certificates
+  shell: "{{ item }} chdir=/home/{{ mig_user }}"
+  with_items:
+## certificate authority
+    - "openssl req -x509 -newkey rsa:{{ mig_rabbitmq_rsakeysize }} -days {{ mig_rabbitmq_certduration }} -keyout {{ mig_rabbitmq_cakey }} -out {{ mig_rabbitmq_cacertcrt }} -subj \"{{ mig_rabbitmq_certinfo }}/CN={{ ansible_fqdn }}\" -extensions root_ca -config /home/{{ mig_user }}/rabbitmq-openssl.cnf -nodes"
+## server
+#    - "openssl req -newkey rsa:{{ mig_rabbitmq_rsakeysize }} -days {{ mig_rabbitmq_certduration }} -keyout {{ mig_rabbitmq_serverkey }} -out {{ mig_rabbitmq_servercsr }} -subj \"{{ mig_rabbitmq_certinfo }}/CN={{ ansible_fqdn }}/O=RabbitMQ server/\" -nodes -config /home/{{ mig_user }}/rabbitmq-openssl.cnf" ## interactive
+    - "openssl req -newkey rsa:{{ mig_rabbitmq_rsakeysize }} -days {{ mig_rabbitmq_certduration }} -keyout {{ mig_rabbitmq_serverkey }} -out {{ mig_rabbitmq_servercsr }} -subj \"{{ mig_rabbitmq_certinfo }}/CN={{ ansible_fqdn }}/O=RabbitMQ server/\" -nodes"
+    - "yes | openssl ca -extensions server_cert -in {{ mig_rabbitmq_servercsr }} -out {{ mig_rabbitmq_servercrt }} -config /home/{{ mig_user }}/rabbitmq-openssl.cnf"
+  become_user: "{{ mig_user }}"
+  become: true
+  when: not servercrt.stat.exists
+
+- stat: path="{{ mig_rabbitmq_clientdir }}/agent.csr"
+  register: agentcsr
+- name: Create certificates for scheduler, workers and agents
+  command: "openssl req -new -newkey rsa:{{ mig_rabbitmq_rsakeysize }} -keyout {{ mig_rabbitmq_clientdir }}/{{ item }}.key -nodes -out {{ mig_rabbitmq_clientdir }}/{{ item }}.csr -config /home/{{ mig_user }}/rabbitmq-openssl.cnf -subj \"{{ mig_rabbitmq_certinfo }}/CN={{ ansible_fqdn }}/O={{ item }}/\""
+  with_items:
+    - scheduler
+    - worker
+    - agent
+  become_user: "{{ mig_user }}"
+  become: true
+  when: not agentcsr.stat.exists
+
+- stat: path="{{ mig_rabbitmq_clientdir }}/agent.crt"
+  register: agentcrt
+- name: Sign certificates for scheduler, workers and agents
+  shell: "yes | openssl ca -extensions server_cert -in {{ mig_rabbitmq_clientdir }}/{{ item }}.csr -out {{ mig_rabbitmq_clientdir }}/{{ item }}.crt -config /home/{{ mig_user }}/rabbitmq-openssl.cnf"
+  with_items:
+    - scheduler
+    - worker
+    - agent
+  become_user: "{{ mig_user }}"
+  become: true
+  when: not agentcrt.stat.exists
+
+- file: dest=/etc/rabbitmq mode=0755 state=directory
+- command: "rsync -ci {{ item }} /etc/rabbitmq/"
+  register: rsync_result
+  changed_when: 'rsync_result.stdout != ""'
+  with_items:
+    - "{{ mig_rabbitmq_cacertcrt }}"
+    - "{{ mig_rabbitmq_serverkey }}"
+    - "{{ mig_rabbitmq_servercrt }}"
+
+- file: dest=/etc/mig mode=0755 state=directory
+- command: "rsync -ci {{ item }} /etc/mig/"
+  register: rsync_result
+  changed_when: 'rsync_result.stdout != ""'
+  with_items:
+    - "{{ mig_rabbitmq_cacertcrt }}"
+    - "{{ mig_rabbitmq_clientdir }}/scheduler.key"
+    - "{{ mig_rabbitmq_clientdir }}/scheduler.crt"
+
+
+
+
+

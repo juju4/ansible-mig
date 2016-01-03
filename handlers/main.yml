@@ -1,0 +1,12 @@
+---
+
+- name: restart supervisor
+  service: name=supervisor state=restarted
+## in kitchen, fails for unknown reason...
+#  ignore_errors: true
+  async: 30
+  poll: 10
+
+- name: restart nginx
+  service: name=nginx state=restarted
+

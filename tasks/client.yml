@@ -1,0 +1,26 @@
+---
+
+- set_fact:
+    mig_arch: amd64
+  when: ansible_architecture == 'x86_64'
+- set_fact:
+    mig_sys: linux
+  when: ansible_system == 'Linux'
+- set_fact:
+    mig_sys: windows
+  when: ansible_system == 'Windows'
+
+- set_fact:
+    mig_agent_bin: "{{ mig_src }}/{{ mig_sys }}/{{ mig_arch }}/mig-agent-latest"
+  when: ansible_system != 'Windows'
+- set_fact:
+    mig_agent_bin: "{{ mig_src }}/{{ mig_sys }}/{{ mig_arch }}/mig-agent-latest.exe"
+  when: ansible_system == 'Windows'
+
+## pkg
+#$ l mig-agent*
+#mig-agent-20160101_0.1bf8619.dev-1.x86_64.rpm  mig-agent_20160101-0.1bf8619.dev_amd64.deb
+
+## run
+#$ sudo bin/linux/amd64/mig-agent-latest -d
+
