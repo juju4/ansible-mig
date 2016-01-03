@@ -89,35 +89,46 @@ Ensure you have enough memory and swap available
 * ansible: go and rabbitmq not idempotent
 
 * mig-scheduler not starting
+```
 $ $GOPATH/src/mig.ninja/mig/bin/linux/amd64/mig-scheduler 
 Initializing Scheduler context...
 FATAL: Init() -> initRelay() -> tls: oversized record received with length 20480
+```
 =
 check ssl configuration is consistent on both scheduler and nginx/rabbitmq (fully disabled or enabled)
 
 * pq: relation \"agents_stats\" does not exist
+```
 $ curl http://localhost/api/v1/dashboard
 {"collection":{"version":"1.0","href":"http://localhost:51664/api/v1/dashboard","template":{},"error":{"code":"5505623982082","message":"Error while retrieving agent statistics: 'pq: relation \"agents_stats\" does not exist'"}}}
+```
 check that postgresql database is initialized
 
 * no access to this vhost
+```
 $ $GOPATH/src/mig.ninja/mig/bin/linux/amd64/mig-scheduler 
 Initializing Scheduler context...
 FATAL: Init() -> initRelay() -> Exception (403) Reason: "no access to this vhost"
+```
 =
 check rabbitmq available, configured and permissions applied on the right vhost
+```
 $ sudo -u rabbitmq rabbitmqctl status
 $ sudo -u rabbitmq rabbitmqctl list_vhosts
 $ sudo -u rabbitmq rabbitmqctl list_users
 $ sudo -u rabbitmq rabbitmqctl list_permissions
 $ tail /var/log/rabbitmq/rabbit*
+```
 
 * pq: role "migscheduler" does not exist
+```
 $ $GOPATH/src/mig.ninja/mig/bin/linux/amd64/mig-scheduler
 Initializing Scheduler context...
 FATAL: Init() -> initSecring() -> makeSecring() -> Error while retrieving scheduler private key: 'pq: role "migscheduler" does not exist'
+```
 =
 check no typo in postgresql user name
+```
 $ sudo -u postgres psql
 psql (9.3.10)
 Type "help" for help.
@@ -143,15 +154,19 @@ postgres=# \l
            |          |          |             |             | postgres=CTc/postgres
  template1 | postgres | UTF8     | en_US.UTF-8 | en_US.UTF-8 | =c/postgres          +
            |          |          |             |             | postgres=CTc/postgres
+```
 *But what should be the (restricted) privileges of migapi and migscheduler?* (nothing in script)
 Currently ALL
 
 * 
 /var/log/supervisor/mig-scheduler.log
+```
 Initializing Scheduler context...
 FATAL: Init() -> initSecring() -> makeSecring() -> Error while retrieving scheduler private key: 'pq: Ident authentication failed for user "migscheduler"'
+```
 =
 On Centos7, postgresql is returned with a migreadonly role
+```
 postgres=# \du
                                  List of roles
   Role name   |                   Attributes                   |   Member of
@@ -176,6 +191,7 @@ postgres=# \l
            |          |          |             |             | postgres=CTc/postgres
  template1 | postgres | UTF8     | en_US.UTF-8 | en_US.UTF-8 | =c/postgres              +
            |          |          |             |             | postgres=CTc/postgres
+```
 
 
 ## License
