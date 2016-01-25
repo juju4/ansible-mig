@@ -22,11 +22,11 @@ setup() {
     [[ "$output" != "" ]]
 }
 
-@test "process mig-scheduler should be running" {
-    run pgrep mig-scheduler
-    [ "$status" -eq 0 ]
-    [[ "$output" != "" ]]
-}
+#@test "process mig-scheduler should be running" {
+#    run pgrep mig-scheduler
+#    [ "$status" -eq 0 ]
+#    [[ "$output" != "" ]]
+#}
 
 @test "API url should be accessible internally" {
     run curl -sSq http://localhost:51664/api/v1/

@@ -81,6 +81,20 @@ mig_nginx_cert: /path/to/cert
 mig_nginx_key: /path/to/key
 ```
 
+## Continuous integration
+
+you can test this role with test kitchen.
+In the role folder, run
+```
+$ kitchen verify
+```
+
+Known bugs
+* Ubuntu: the notify 'supervisor restart' fails the first time. not sure
+  why. second time run is fine after you do ```sudo service supervisor restart; sudo service nginx restart```
+  (failed notified handlers).
+* centos: mig-scheduler fails to run because of postgresql permissions
+
 ## Troubleshooting & Known issues
 
 * memory

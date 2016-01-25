@@ -93,7 +93,7 @@
 #  replace: dest="{{ mig_src }}/conf/mig-agent.cfg" regexp="{{ item.re }}" replace="{{ item.rep }}"
   replace: dest="{{ mig_src }}/conf/mig-agent.cfg.inc" regexp="{{ item.re }}" replace="{{ item.rep }}"
   with_items:
-    - { re: 'api             = \"http://localhost:1664/api/v1/\"', rep: 'api             = \"http://{{ mig_api_host }}:{{ mig_api_port }}/api/v1/\"' }
+    - { re: 'api             = ".*"$', rep: 'api             = "http://{{ mig_api_host }}:{{ mig_api_port }}/api/v1/"' }
 
 - name: Set Agent configuration - mig-agent-conf.go
   command: "rsync -ci {{ mig_src }}/conf/mig-agent-conf.go.inc {{ mig_src }}/conf/mig-agent-conf.go"
@@ -105,8 +105,8 @@
 #  replace: dest="{{ mig_src }}/conf/mig-agent-conf.go" regexp="{{ item.re }}" replace="{{ item.rep }}"
   replace: dest="{{ mig_src }}/conf/mig-agent-conf.go.inc" regexp="{{ item.re }}" replace="{{ item.rep }}"
   with_items:
-    - { re: '^var APIURL string = \"http://localhost:1664/api/v1/\"', rep: 'var APIURL string = \"http://{{ mig_api_host }}:{{ mig_api_port }}/api/v1/\"' }
-    - { re: '^var AMQPBROKER string = \"amqp://guest:guest@localhost:5672/\"', rep: 'var AMQPBROKER string = \"http://agent:{{ mig_rabbitmq_agentpass }}@{{ mig_rabbitmq_host }}:{{ mig_rabbitmq_port }}/\"' }
+    - { re: '^var APIURL string = ".*"$', rep: 'var APIURL string = "http://{{ mig_api_host }}:{{ mig_api_port }}/api/v1/"' }
+    - { re: '^var AMQPBROKER string = ".*"$', rep: 'var AMQPBROKER string = "http://agent:{{ mig_rabbitmq_agentpass }}@{{ mig_rabbitmq_host }}:{{ mig_rabbitmq_port }}/"' }
 
 #- stat: path="{{ mig_gopath }}/pkg/linux_amd64/mig.ninja/mig.a"
 - stat: path="{{ mig_src }}/bin/linux/amd64/mig-scheduler"
@@ -157,13 +157,18 @@
 
 - stat: path=/home/{{ mig_user }}/.dbinit
   register: dbinit
+- name: Copy sql schema for user postgres
+  command: "rsync -ci --chmod=ugo+r {{ mig_src }}/database/schema.sql /tmp/schema.sql"
+  register: rsync_result
+  changed_when: 'rsync_result.stdout != ""'
+  when: not dbinit.stat.exists
 - name: loading default db schema
 #  shell: "psql mig < {{ mig_src }}/database/schema.sql"
 ## NOK: owner of all databases is postgres, not migadmin...
 #  command: "psql -d mig -f {{ mig_src }}/database/schema.sql"
-  command: "psql -d mig -f {{ mig_src }}/database/schema.sql"
+  command: "psql -d mig -f /tmp/schema.sql"
   become: yes
-  become_user: postgres        ## user can't access schema.sql
+  become_user: postgres
   when: not dbinit.stat.exists
 - file: dest=/home/{{ mig_user }}/.dbinit state=touch
   when: not dbinit.stat.exists
@@ -182,13 +187,13 @@
 - name: update scheduler configuration
   replace: dest="/etc/mig/scheduler.cfg" regexp="{{ item.re }}" replace="{{ item.rep }}"
   with_items:
-    - { re: 'password = \"123456\"', rep: 'password = \"{{ mig_db_migscheduler_pass }}\"' }
-    - { re: 'user  = \"guest\"', rep: 'user  = \"scheduler\"' }
-    - { re: 'pass  = \"guest\"', rep: 'pass  = \"{{ mig_rabbitmq_schedpass }}\"' }
+    - { re: 'password = "123456"', rep: 'password = "{{ mig_db_migscheduler_pass }}"' }
+    - { re: 'user  = "guest"', rep: 'user  = "scheduler"' }
+    - { re: 'pass  = "guest"', rep: 'pass  = "{{ mig_rabbitmq_schedpass }}"' }
 #    - { re: '^;   usetls  = true', rep: '   usetls  = true' }
-    - { re: '^;   cacert  = \"/path/to/cacert.pem\"', rep: '   cacert  = \"/etc/mig/ca.crt\"' }
-    - { re: '^;   tlscert = \"/path/to/cert.pem\"', rep: '   tlscert  = \"/etc/mig/scheduler.crt\"' }
-    - { re: '^;   tlskey  = \"/path/to/key.pem\"', rep: '   tlskey  = \"/etc/mig/scheduler.key\"' }
+    - { re: '^;   cacert  = "/path/to/cacert.pem"', rep: '   cacert  = "/etc/mig/ca.crt"' }
+    - { re: '^;   tlscert = "/path/to/cert.pem"', rep: '   tlscert  = "/etc/mig/scheduler.crt"' }
+    - { re: '^;   tlskey  = "/path/to/key.pem"', rep: '   tlskey  = "/etc/mig/scheduler.key"' }
   notify:
     - restart supervisor
 - name: update scheduler configuration - ssl
@@ -217,9 +222,9 @@
 - name: update api configuration
   replace: dest="/etc/mig/api.cfg" regexp="{{ item.re }}" replace="{{ item.rep }}"
   with_items:
-    - { re: 'password = \"123456\"', rep: 'password = \"{{ mig_db_migapi_pass }}\"' }
+    - { re: 'password = "123456"', rep: 'password = "{{ mig_db_migapi_pass }}"' }
     - { re: 'port = 12345', rep: 'port = {{ mig_api_port }}' }
-    - { re: 'host = \"http://localhost:12345\"', rep: 'host = \"http://localhost:{{ mig_api_port }}\"' }
+    - { re: 'host = "http://localhost:12345"', rep: 'host = "http://localhost:{{ mig_api_port }}"' }
   notify:
     - restart supervisor
 
@@ -263,48 +268,5 @@
 - name: Ensure nginx is enabled and started
   service: name=nginx state=started enabled=yes
 
-
-## FIXME! globbing not working = ignore_errors
-- stat: path="{{ mig_src }}/mig-agent_*.deb"
-  register: migagentpkg1
-#- debug: var=migagentpkg1
-- name: Build MIG platform agent packages - deb
-  command: "make deb-agent chdir={{ mig_src }}"
-  environment:
-    GOPATH: "{{ mig_gopath }}"
-    BUILDENV: prod
-  become: yes
-  become_user: "{{ mig_user }}"
-  when: not migagentpkg1.stat.exists
-  ignore_errors: true
-- stat: path="{{ mig_src }}/mig-agent_*.rpm"
-  register: migagentpkg2
-- name: Build MIG platform agent packages - rpm
-  command: "make rpm-agent chdir={{ mig_src }}"
-  environment:
-    GOPATH: "{{ mig_gopath }}"
-    BUILDENV: prod
-  become: yes
-  become_user: "{{ mig_user }}"
-  when: not migagentpkg2.stat.exists
-  ignore_errors: true
-#    - "make dmg-agent"     ## only on MacOS
-#    - "make msi-agent"     ## Need wixl/no package
-- stat: path="{{ mig_src }}/bin/linux/amd64/mig-agent-latest.exe"
-  register: migagentbin2
-## FIXME! fails silently
-- name: Build MIG platform cross-platform agent
-#  command: "make mig-agent msi-agent chdir={{ mig_src }}"
-  command: "make mig-agent chdir={{ mig_src }}"
-  environment:
-    GOPATH: "{{ mig_gopath }}"
-    BUILDENV: prod
-    OS: windows
-    ARCH: amd64
-  become: yes
-  become_user: "{{ mig_user }}"
-  when: not migagentbin2.stat.exists
-
-#- name: retrieve mig-agent to deploy? what about libraries? (vdso, pthread, c)
-#  fetch: src="{{ mig_src }}/bin/linux/amd64/mig-agent-latest" dest=migagent flat=yes
+- include: agents-building.yml
 

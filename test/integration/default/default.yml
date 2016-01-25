@@ -3,6 +3,7 @@
 - hosts: test-kitchen
   vars:
     - mig_user: vagrant
+    - rabbitmq_cert_source: 'none'
     - rabbitmq_cacert:
     - rabbitmq_server_key:
     - rabbitmq_server_cert:
