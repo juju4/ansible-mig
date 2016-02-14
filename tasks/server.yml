@@ -79,36 +79,6 @@
   environment:
     GOPATH: "{{ mig_gopath }}"
 
-- name: install gem fpm for agent packaging
-  gem: name=fpm state=present user_install=no
-
-- name: Set Agent configuration - mig-agent.cfg
-#  template: src=mig-agent-conf.go dest=/home/{{ mig_user }}/mig/conf/mig-agent-conf.go owner={{ mig_user }}
-  command: "rsync -ci {{ mig_src }}/conf/mig-agent.cfg.inc {{ mig_src }}/conf/mig-agent.cfg"
-  register: rsync_result
-  changed_when: 'rsync_result.stdout != ""'
-  become: yes
-  become_user: "{{ mig_user }}"
-- name: update agent configuration - mig-agent.cfg
-#  replace: dest="{{ mig_src }}/conf/mig-agent.cfg" regexp="{{ item.re }}" replace="{{ item.rep }}"
-  replace: dest="{{ mig_src }}/conf/mig-agent.cfg.inc" regexp="{{ item.re }}" replace="{{ item.rep }}"
-  with_items:
-    - { re: 'api             = ".*"$', rep: 'api             = "http://{{ mig_api_host }}:{{ mig_api_port }}/api/v1/"' }
-
-- name: Set Agent configuration - mig-agent-conf.go
-  command: "rsync -ci {{ mig_src }}/conf/mig-agent-conf.go.inc {{ mig_src }}/conf/mig-agent-conf.go"
-  register: rsync_result
-  changed_when: 'rsync_result.stdout != ""'
-  become: yes
-  become_user: "{{ mig_user }}"
-- name: update agent configuration mig-agent-conf.go
-#  replace: dest="{{ mig_src }}/conf/mig-agent-conf.go" regexp="{{ item.re }}" replace="{{ item.rep }}"
-  replace: dest="{{ mig_src }}/conf/mig-agent-conf.go.inc" regexp="{{ item.re }}" replace="{{ item.rep }}"
-  with_items:
-    - { re: '^var APIURL string = ".*"$', rep: 'var APIURL string = "http://{{ mig_api_host }}:{{ mig_api_port }}/api/v1/"' }
-    - { re: '^var AMQPBROKER string = ".*"$', rep: 'var AMQPBROKER string = "http://agent:{{ mig_rabbitmq_agentpass }}@{{ mig_rabbitmq_host }}:{{ mig_rabbitmq_port }}/"' }
-
-#- stat: path="{{ mig_gopath }}/pkg/linux_amd64/mig.ninja/mig.a"
 - stat: path="{{ mig_src }}/bin/linux/amd64/mig-scheduler"
   register: migbin
 - name: Build MIG platform
@@ -174,7 +144,8 @@
   when: not dbinit.stat.exists
 
 
-- file: dest=/etc/mig state=directory mode=0755
+- name: Ensure mig configuration dir exists
+  file: dest=/etc/mig state=directory mode=0755
 
 - stat: path="/etc/mig/scheduler.cfg"
   register: schedulercfg
@@ -260,13 +231,29 @@
   notify:
     - restart supervisor
 
+- name: Ensure nrpe.d dir exists
+  file: dest=/etc/nagios/nrpe.d state=directory mode=0755
+- name: add some nrpe commands for monitoring
+  copy: src=mig-nrpe.cfg dest=/etc/nagios/nrpe.d/mig-nrpe.cfg mode=0644
+
 - include: gpg-example.yml
   when: mig_gpg_example is defined and mig_gpg_example
+- name: create user migrc
+  template: src=migrc dest="{{ gpg_home }}/.migrc" mode=0600 owner="{{ gpg_user }}"
+  when: gpgkeys.stdout == ""
 
 - name: Ensure supervisor is enabled and started
   service: name="{{ supervisor_service }}" state=started enabled=yes
 - name: Ensure nginx is enabled and started
   service: name=nginx state=started enabled=yes
+- name: Manual restart - bug
+  service: name="{{ item }}" state=restarted
+  with_items:
+    - "{{ supervisor_service }}"
+    - nginx
+    - rabbitmq-server
+  ignore_errors: true
 
+## must be after investigator key generation
 - include: agents-building.yml
 

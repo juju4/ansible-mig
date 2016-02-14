@@ -10,6 +10,7 @@ mig_gopath: "/home/{{ mig_user }}/go"
 mig_src: "{{ mig_gopath }}/src/mig.ninja/mig"
 mig_api_host: localhost
 mig_api_port: 51664
+mig_server_withagent: true
 
 mig_db_migadmin_pass: xxx
 mig_db_migapi_pass: xxx
@@ -49,6 +50,18 @@ mig_nginx_key: /path/to/key
 
 ## do you want to create investigator1 gpg user?
 mig_gpg_example: true
+gpg_user: "vagrant"
+gpg_realname: "MIG Example investigator"
+gpg_userhome: '/home/vagrant'
+gpg_useremail: "{{ gpg_user }}@localhost"
+gpg_pubkeyfile: "pubkey"
+gpg_privkeyfile: "privkey"
+gpg_pubkeyfileexport: "{{ gpg_user }}.asc"
+
+gpg_keylength: 2048
+gpg_subkeylength: 2048
+gpg_expire: 360
+
 
 ### client
 #mig_src: "{{ mig_gopath }}/src/mig.ninja/mig"
@@ -56,3 +69,9 @@ mig_gpg_example: true
 #mig_api_host: localhost
 #mig_api_port: 51664
 #mig_path: 
+## agent will use those proxy as rescue network access if direct access not working
+mig_proxy_list: '{`proxy.example.net:3128`, `proxy2.example.net:8080`}'
+mig_client_investigators:
+    - { realname: "{{ gpg_realname }}", fingerprint: '', pubkey: "{{ gpg_userhome }}/{{ gpg_pubkeyfileexport }}", weight: 2 }
+#    - { realname: "{{ gpg_realname }}", fingerprint: '', pubkeyfile: "{{ gpg_pubkeyfileexport }}", pubkey: "{{ lookup('file', {{ gpg_pubkeyfileexport }}) }}", weight: 2 }
+

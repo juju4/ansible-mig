@@ -24,6 +24,11 @@ For example
   roles:
     - Mayeu.RabbitMQ
     - mig
+
+- host: migclient
+  roles:
+    - { role: mig, mig_mode: client, mig_api_host: ansiblemigservername }
+
 ```
 
 Currently, I used a slightly modified version of Mayeu.RabbitMQ as normally, this role is expecting to have rabbitmq certificates available on orchestrator and I'm generating them on mig role if not existing.
@@ -40,6 +45,8 @@ $GOPATH/src/mig.ninja/mig/bin/linux/amd64/mig-agent-latest
 
 As for any services, you are recommended to do hardening.
 Especially on RabbitMQ part (include erlang epmd)
+
+Some nrpe commands are included to help for monitoring.
 
 ## Variables
 

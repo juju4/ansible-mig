@@ -3,9 +3,52 @@
 #- name: download wixl for windows agent packaging
 #  get_url: url=http://ftp.gnome.org/pub/GNOME/sources/msitools/0.95/msitools-0.95.tar.xz dest=/root/msitools-0.95.tar.xz
 
-## FIXME! globbing not working = ignore_errors
-- stat: path="{{ mig_src }}/mig-agent_*.deb"
+- name: install gem fpm for agent packaging
+  gem: name=fpm state=present user_install=no
+
+- name: Set Agent configuration - mig-agent.cfg
+#  template: src=mig-agent-conf.go dest=/home/{{ mig_user }}/mig/conf/mig-agent-conf.go owner={{ mig_user }}
+  command: "rsync -ci {{ mig_src }}/conf/mig-agent.cfg.inc {{ mig_src }}/conf/mig-agent.cfg"
+  register: rsync_result
+  changed_when: 'rsync_result.stdout != ""'
+  become: yes
+  become_user: "{{ mig_user }}"
+- name: update agent configuration - mig-agent.cfg
+#  replace: dest="{{ mig_src }}/conf/mig-agent.cfg" regexp="{{ item.re }}" replace="{{ item.rep }}"
+  replace: dest="{{ mig_src }}/conf/mig-agent.cfg.inc" regexp="{{ item.re }}" replace="{{ item.rep }}"
+  with_items:
+    - { re: 'api             = ".*"$', rep: 'api             = "http://{{ mig_api_host }}:{{ mig_api_port }}/api/v1/"' }
+    - { re: '   ca  = "/path/to/ca/cert"', rep: '   ca  = "/etc/mig/ca.crt"' }
+#    - { re: '   cert= "/path/to/client/cert"', rep: '   cert= "/path/to/client/cert"' }
+#    - { re: '   key = "/path/to/private/key"', rep: '   key = "/path/to/private/key"' }
+
+
+- set_fact:
+    mig_rabbitmq_clientagentcrt: "{{ lookup('file', mig_rabbitmq_clientdir+'/agent.crt') }}"
+    mig_rabbitmq_clientagentkey: "{{ lookup('file', mig_rabbitmq_clientdir+'/agent.key') }}"
+    mig_rabbitmq_cacertcrtval: "{{ lookup('file', mig_rabbitmq_cacertcrt) }}"
+- debug: var=mig_rabbitmq_clientagentcrt
+- debug: var=test
+- name: Set Agent configuration - mig-agent-conf.go
+  template: src=mig-agent-conf.go.j2 dest="{{ mig_src }}/conf/mig-agent-conf.go" mode=0644
+#  command: "rsync -ci {{ mig_src }}/conf/mig-agent-conf.go.inc {{ mig_src }}/conf/mig-agent-conf.go"
+#  register: rsync_result
+#  changed_when: 'rsync_result.stdout != ""'
+#  become: yes
+#  become_user: "{{ mig_user }}"
+#- name: update agent configuration mig-agent-conf.go
+##  replace: dest="{{ mig_src }}/conf/mig-agent-conf.go" regexp="{{ item.re }}" replace="{{ item.rep }}"
+#  replace: dest="{{ mig_src }}/conf/mig-agent-conf.go.inc" regexp="{{ item.re }}" replace="{{ item.rep }}"
+#  with_items:
+#    - { re: '^var APIURL string = ".*"$', rep: 'var APIURL string = "http://{{ mig_api_host }}:{{ mig_api_port }}/api/v1/"' }
+#    - { re: '^var AMQPBROKER string = ".*"$', rep: 'var AMQPBROKER string = "http://agent:{{ mig_rabbitmq_agentpass }}@{{ mig_rabbitmq_host }}:{{ mig_rabbitmq_port }}/"' }
+#    - { re: '^var PROXIES = [...]string{`proxy.example.net:3128`, `proxy2.example.net:8080`}', rep: 'var PROXIES = [...]string{{ mig_proxy_list }}' }
+
+- name: check if already debian mig-agent package
+  shell: "ls {{ mig_src }}/mig-agent_*.deb | grep -v latest"
   register: migagentpkg1
+  changed_when: False
+  ignore_errors: true
 #- debug: var=migagentpkg1
 - name: Build MIG platform agent packages - deb
   command: "make deb-agent chdir={{ mig_src }}"
@@ -15,10 +58,21 @@
     BUILDENV: prod
   become: yes
   become_user: "{{ mig_user }}"
-  when: not migagentpkg1.stat.exists
+  when: migagentpkg1.rc != 0 or migagentpkg1.sdout == ''
   ignore_errors: true
-- stat: path="{{ mig_src }}/mig-agent_*.rpm"
+- name: get current name of debian mig-agent package
+  shell: "ls -Art {{ mig_src }}/mig-agent_*.deb | grep -v latest | tail -1"
+  register: migagentpkg1b
+  changed_when: False
+#- debug: var=migagentpkg1b
+- name: create symlink latest for debian mig-agent package
+  file: "src={{ migagentpkg1b.stdout }} dest={{ mig_src }}/mig-agent_latest-{{ ansible_architecture }}.deb state=link"
+
+- name: check if already rpm mig-agent package
+  shell: "ls {{ mig_src }}/mig-agent-*.rpm | grep -v latest"
   register: migagentpkg2
+  changed_when: False
+  ignore_errors: true
 - name: Build MIG platform agent packages - rpm
   command: "make rpm-agent chdir={{ mig_src }}"
   environment:
@@ -27,25 +81,33 @@
     BUILDENV: prod
   become: yes
   become_user: "{{ mig_user }}"
-  when: not migagentpkg2.stat.exists
+  when: migagentpkg2.rc != 0 or migagentpkg2.sdout == ''
   ignore_errors: true
 #    - "make dmg-agent"     ## only on MacOS
 #    - "make msi-agent"     ## Need wixl/no package before wily
-- stat: path="{{ mig_src }}/bin/linux/amd64/mig-agent-latest.exe"
-  register: migagentbin2
-## FIXME! fails silently
-- name: Build MIG platform cross-platform agent
-#  command: "make mig-agent msi-agent chdir={{ mig_src }}"
-  command: "make mig-agent chdir={{ mig_src }}"
-  environment:
-    PATH: "/usr/local/bin:/usr/bin:/bin:/usr/local/sbin:/usr/sbin:/usr/local/go/bin:/usr/local/bin"
-    GOPATH: "{{ mig_gopath }}"
-    BUILDENV: prod
-    OS: windows
-    ARCH: amd64
-  become: yes
-  become_user: "{{ mig_user }}"
-  when: not migagentbin2.stat.exists
+- name: get current name of rpm mig-agent package
+  shell: "ls -Art {{ mig_src }}/mig-agent-*.rpm | grep -v latest | tail -1"
+  register: migagentpkg2b
+  changed_when: False
+#- debug: var=migagentpkg2b
+- name: create symlink latest for rpm mig-agent package
+  file: "src={{ migagentpkg2b.stdout }} dest={{ mig_src }}/mig-agent-latest-{{ ansible_architecture }}.rpm state=link"
+
+#- stat: path="{{ mig_src }}/bin/linux/amd64/mig-agent-latest.exe"
+#  register: migagentbin2
+### FIXME! fails silently, dependencies missing
+#- name: Build MIG platform cross-platform agent - windows
+##  command: "make mig-agent msi-agent chdir={{ mig_src }}"
+#  command: "make mig-agent chdir={{ mig_src }}"
+#  environment:
+#    PATH: "/usr/local/bin:/usr/bin:/bin:/usr/local/sbin:/usr/sbin:/usr/local/go/bin:/usr/local/bin"
+#    GOPATH: "{{ mig_gopath }}"
+#    BUILDENV: prod
+#    OS: windows
+#    ARCH: amd64
+#  become: yes
+#  become_user: "{{ mig_user }}"
+#  when: not migagentbin2.stat.exists
 
 #- name: retrieve mig-agent to deploy? what about libraries? (vdso, pthread, c)
 #  fetch: src="{{ mig_src }}/bin/linux/amd64/mig-agent-latest" dest=migagent flat=yes

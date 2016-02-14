@@ -53,8 +53,10 @@
   become: true
   when: not agentcrt.stat.exists
 
+## FIXME! certificate file contains fingerprint and info too...
 - file: dest=/etc/rabbitmq mode=0755 state=directory
-- command: "rsync -ci {{ item }} /etc/rabbitmq/"
+- name: synchronize rabbitmq server certificates to rabbitmq config directory
+  command: "rsync -ci {{ item }} /etc/rabbitmq/"
   register: rsync_result
   changed_when: 'rsync_result.stdout != ""'
   with_items:
@@ -63,7 +65,8 @@
     - "{{ mig_rabbitmq_servercrt }}"
 
 - file: dest=/etc/mig mode=0755 state=directory
-- command: "rsync -ci {{ item }} /etc/mig/"
+- name: synchronize rabbitmq client certificates to mig config directory
+  command: "rsync -ci {{ item }} /etc/mig/"
   register: rsync_result
   changed_when: 'rsync_result.stdout != ""'
   with_items:

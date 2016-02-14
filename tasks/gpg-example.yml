@@ -1,54 +1,71 @@
 ---
 
 - set_fact:
-    mig_home: '/root/'
-  when: mig_user == 'root'
-- set_fact:
-    mig_home: "/home/{{ mig_user }}"
-  when: mig_user != 'root'
+    gpg_user: 'vagrant'
+    gpg_useremail: 'vagrant@localhost'
+  when: gpg_user is not defined or gpg_user != "" or gpg_user == null
 
 - set_fact:
-    inv1_email: investigator1@example.com
+    gpg_home: '/root/'
+  when: gpg_user == 'root'
+- set_fact:
+    gpg_home: "/home/{{ gpg_user }}"
+#    gpg_home: "/home/{{ gpg_user|default('vagrant') }}"
+  when: gpg_user != 'root'
 
-#- debug: var=mig_user
-#- debug: var=mig_home
+- name: apt | Ensure have enough randomness
+  apt: name={{item}} state=present update_cache=yes
+  with_items:
+    - rng-tools
+#    - gnupg
+    - gpgv2
+  when: ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu'
+- include: redhat-epel.yml
+- name: yum | Ensure have enough randomness
+  yum: name={{item}} state=present update_cache=yes
+  with_items:
+    - haveged
+    - gnupg
+  when: ansible_os_family == "RedHat" or ansible_distribution == 'CentOS' or ansible_distribution == 'Red Hat Enterprise Linux'
 
-- file: dest={{ mig_home }}/.gnupg state=directory mode=0700 owner="{{ mig_user }}"
+- debug: var=ansible_ssh_user
+- debug: var=ansible_user
+- debug: var=gpg_user
+- debug: var=gpg_home
+
+- file: dest={{ gpg_home }}/.gnupg state=directory mode=0700 owner="{{ gpg_user }}"
 - name: set defaut gpg options
-  copy: src=gpg.conf dest="{{ mig_home }}/.gnupg/gpg.conf" mode=0600 owner="{{ mig_user }}"
+  copy: src=gpg.conf dest="{{ gpg_home }}/.gnupg/gpg.conf" mode=0600 owner="{{ gpg_user }}"
 - name: copy default template for gpg key generation
-  template: src=gen-key-script dest="{{ mig_home }}/.gnupg/gen-key-script" mode=0600 owner="{{ mig_user }}"
+  template: src=gen-key-script dest="{{ gpg_home }}/.gnupg/gen-key-script" mode=0600 owner="{{ gpg_user }}"
 - name: check existing secret key
   command: gpg --list-secret-keys
   changed_when: false
   become: yes
-  become_user: "{{ mig_user }}"
+  become_user: "{{ gpg_user }}"
   register: gpgkeys
 #- debug: var=gpgkeys
-- name: generate example investigator key
-  command: "gpg --batch --gen-key {{ mig_home }}/.gnupg/gen-key-script chdir={{ mig_home }}"
+- name: generate gpg key
+  command: "gpg --batch --gen-key {{ gpg_home }}/.gnupg/gen-key-script chdir={{ gpg_home }}"
   become: yes
-  become_user: "{{ mig_user }}"
+  become_user: "{{ gpg_user }}"
   when: gpgkeys.stdout == ""
   register: genkey
 #- debug: var=genkey
 - name: import generated keys
-  command: "gpg --import {{ mig_home }}/investigator1.pub {{ mig_home }}/investigator1.sec"
+  command: "gpg --import {{ gpg_home }}/{{ gpg_pubkeyfile }} {{ gpg_home }}/{{ gpg_privkeyfile }}"
   become: yes
-  become_user: "{{ mig_user }}"
+  become_user: "{{ gpg_user }}"
   when: gpgkeys.stdout == ""
 - name: get user gpg fingerprint
-  shell: "gpg --fingerprint {{ inv1_email }} | awk -F= '/Key fingerprint/ { gsub(/ /,\"\", $2); print $2 }'"
+  shell: "gpg --fingerprint {{ gpg_useremail }} | awk -F= '/Key fingerprint/ { gsub(/ /,\"\", $2); print $2 }'"
   changed_when: false
-  register: mig_user_fingerprint
+  register: gpg_user_fingerprint
   become: yes
-  become_user: "{{ mig_user }}"
-- name: create user migrc
-  template: src=migrc dest="{{ mig_home }}/.migrc" mode=0600 owner="{{ mig_user }}"
-  when: gpgkeys.stdout == ""
+  become_user: "{{ gpg_user }}"
 - name: get user armored public key
-  shell: "gpg --export -a {{ inv1_email }} > {{ mig_home }}/investigator1_pubkey.asc"
+  shell: "gpg --export -a {{ gpg_useremail }} > {{ gpg_home }}/{{ gpg_pubkeyfileexport }}"
   changed_when: false
   become: yes
-  become_user: "{{ mig_user }}"
+  become_user: "{{ gpg_user }}"
 

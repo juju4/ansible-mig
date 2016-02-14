@@ -16,7 +16,9 @@
   when: not goarchive.stat.exists
 - stat: path=/usr/local/go
   register: godir
-- command: tar xzf /usr/local/go{{ mig_gover }}.linux-{{ architecture }}.tar.gz -C /usr/local/
+- name: Extract go archive to /usr/local
+#  command: tar xzf /usr/local/go{{ mig_gover }}.linux-{{ architecture }}.tar.gz -C /usr/local/
+  unarchive: "src=/usr/local/go{{ mig_gover }}.linux-{{ architecture }}.tar.gz dest=/usr/local/ copy=no"
   when: not godir.stat.exists
 
 - file: src=/usr/local/go/bin/{{ item }} dest=/usr/bin/{{ item }} state=link
