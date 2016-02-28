@@ -18,27 +18,28 @@
 - debug: var=remote_user
 - fail: msg="mig_user is not defined or empty!"
   when: mig_user is not defined or mig_user == ''
-
-- name: Update PATH and GOPATH in bashrc - root
-  lineinfile:
-    dest: "{{ item.d }}"
-    line: "{{ item.l }}"
-    regexp: "{{ item.r }}"
-    insertafter: EOF
-    state: present
-    create: False
-  with_items:
-    - { d: "/root/.bashrc", r: "go/bin", l: 'export PATH=$PATH\:/usr/local/go/bin' }
-    - { d: "/root/.bashrc", r: "GOPATH={{ mig_gopath }}", l: 'export GOPATH={{ mig_gopath }}' }
-## on centos7, missing this for fpm
-    - { d: "/root/.bashrc", r: "/usr/local/bin", l: 'export PATH=$PATH\:/usr/local/bin' }
-- stat: path="/home/{{ mig_user }}/.bashrc"
-  register: homemiguser
-#- debug: var=homemiguser
 ## FIXME! https://github.com/ansible/ansible/issues/14597
+- debug: var=mig_user
 - set_fact:
     mig_user: 'vagrant'
-    when: mig_user is not defined or mig_user != "" or mig_user == null
+  when: env.stdout.find('SUDO_COMMAND=/bin/bash -c ansible-playbook --inventory-file=/tmp/kitchen/hosts -c local -M /tmp/kitchen/modules /tmp/kitchen/default.yml') != -1 or env.stdout.find('SUDO_COMMAND=/tmp/verifier/bin/busser test') != -1
+- set_fact:
+    mig_user: 'root'
+  when: env.stdout.find('TRAVIS=true') != -1
+- debug: var=mig_user
+
+- set_fact:
+    mig_home: '/root'
+  when: mig_user == 'root'
+- set_fact:
+    mig_home: "/home/{{ mig_user }}"
+  when: mig_user != 'root'
+
+
+- stat: path="{{ mig_home }}/.bashrc"
+  register: homemiguser
+#- debug: var=homemiguser
+
 - name: Update PATH and GOPATH in bashrc - mig_user
   lineinfile:
     dest: "{{ item.d }}"
@@ -48,20 +49,20 @@
     state: present
     create: False
   with_items:
-    - { d: "/home/{{ mig_user }}/.bashrc", r: "go/bin", l: 'export PATH=$PATH\:/usr/local/go/bin' }
-    - { d: "/home/{{ mig_user }}/.bashrc", r: "GOPATH={{ mig_gopath }}", l: "export GOPATH={{ mig_gopath }}" }
+    - { d: "{{ mig_home }}/.bashrc", r: "go/bin", l: 'export PATH=$PATH\:/usr/local/go/bin' }
+    - { d: "{{ mig_home }}/.bashrc", r: "GOPATH={{ mig_gopath }}", l: "export GOPATH={{ mig_gopath }}" }
 ## on centos7, missing this for fpm
-    - { d: "/home/{{ mig_user }}/.bashrc", r: "/usr/local/bin", l: 'export PATH=$PATH\:/usr/local/bin' }
+    - { d: "{{ mig_home }}/.bashrc", r: "/usr/local/bin", l: 'export PATH=$PATH\:/usr/local/bin' }
   when: homemiguser.stat.exists
 
 ## http://mig.mozilla.org/doc/configuration.rst.html
-#- stat: path=/home/{{ mig_user }}/mig
+#- stat: path={{ mig_home }}/mig
 #  register: migrepo
 #- name: Git clone MIG
 #  git:
 #    #accept_hostkey=yes ## if using ssh
 #    repo=https://github.com/mozilla/mig.git
-#    dest=/home/{{ mig_user }}/mig
+#    dest={{ mig_home }}/mig
 #  become: yes
 #  become_user: "{{ mig_user }}"
 #  when: not migrepo.stat.exists
@@ -137,7 +138,7 @@
   become: yes
   become_user: postgres
 
-- stat: path=/home/{{ mig_user }}/.dbinit
+- stat: path={{ mig_home }}/.dbinit
   register: dbinit
 - name: Copy sql schema for user postgres
   command: "rsync -ci --chmod=ugo+r {{ mig_src }}/database/schema.sql /tmp/schema.sql"
@@ -152,7 +153,7 @@
   become: yes
   become_user: postgres
   when: not dbinit.stat.exists
-- file: dest=/home/{{ mig_user }}/.dbinit state=touch
+- file: dest={{ mig_home }}/.dbinit state=touch
   when: not dbinit.stat.exists
 
 
