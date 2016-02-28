@@ -43,6 +43,7 @@
 
 - stat: path="{{ mig_rabbitmq_clientdir }}/agent.crt"
   register: agentcrt
+- debug: var="openssl ca -extensions server_cert -in {{ mig_rabbitmq_clientdir }}/agent.csr -out {{ mig_rabbitmq_clientdir }}/agent.crt -config /home/{{ mig_user }}/rabbitmq-openssl.cnf"
 - name: Sign certificates for scheduler, workers and agents
   shell: "yes | openssl ca -extensions server_cert -in {{ mig_rabbitmq_clientdir }}/{{ item }}.csr -out {{ mig_rabbitmq_clientdir }}/{{ item }}.crt -config /home/{{ mig_user }}/rabbitmq-openssl.cnf"
   with_items:
@@ -59,6 +60,9 @@
   command: "rsync -ci {{ item }} /etc/rabbitmq/"
   register: rsync_result
   changed_when: 'rsync_result.stdout != ""'
+## NOK: not doing remote to remote
+#  synchronize: src="{{ item }}" dest=/etc/rabbitmq/ archive=no
+#  delegate_to: "{{ ansible_hostname }}"
   with_items:
     - "{{ mig_rabbitmq_cacertcrt }}"
     - "{{ mig_rabbitmq_serverkey }}"
@@ -66,6 +70,7 @@
 
 - file: dest=/etc/mig mode=0755 state=directory
 - name: synchronize rabbitmq client certificates to mig config directory
+## FIXME! use synchronize module too?
   command: "rsync -ci {{ item }} /etc/mig/"
   register: rsync_result
   changed_when: 'rsync_result.stdout != ""'
@@ -73,8 +78,5 @@
     - "{{ mig_rabbitmq_cacertcrt }}"
     - "{{ mig_rabbitmq_clientdir }}/scheduler.key"
     - "{{ mig_rabbitmq_clientdir }}/scheduler.crt"
-
-
-
 
 

@@ -23,26 +23,38 @@
 #    - { re: '   key = "/path/to/private/key"', rep: '   key = "/path/to/private/key"' }
 
 
-- set_fact:
-    mig_rabbitmq_clientagentcrt: "{{ lookup('file', mig_rabbitmq_clientdir+'/agent.crt') }}"
-    mig_rabbitmq_clientagentkey: "{{ lookup('file', mig_rabbitmq_clientdir+'/agent.key') }}"
-    mig_rabbitmq_cacertcrtval: "{{ lookup('file', mig_rabbitmq_cacertcrt) }}"
+- stat: path={{ mig_rabbitmq_clientdir+'/agent.crt' }}
+  register: agentcrt
+- name: read agent.crt
+  command: "cat {{ mig_rabbitmq_clientdir+'/agent.crt' }}"
+  changed_when: false
+  register: mig_rabbitmq_clientagentcrt
+- name: read agent.key
+  command: "cat {{ mig_rabbitmq_clientdir+'/agent.key' }}"
+  changed_when: false
+  register: mig_rabbitmq_clientagentkey
+- name: read agent.key
+  command: "cat {{ mig_rabbitmq_cacertcrt }}"
+  changed_when: false
+  register: mig_rabbitmq_cacertcrtval
 - debug: var=mig_rabbitmq_clientagentcrt
-- debug: var=test
+#- debug: var=mig_rabbitmq_cacertcrtval
+#- debug: var=test
+#- debug: var=mig_client_investigators2
+#- debug: var=mig_client_investigators
 - name: Set Agent configuration - mig-agent-conf.go
-  template: src=mig-agent-conf.go.j2 dest="{{ mig_src }}/conf/mig-agent-conf.go" mode=0644
-#  command: "rsync -ci {{ mig_src }}/conf/mig-agent-conf.go.inc {{ mig_src }}/conf/mig-agent-conf.go"
-#  register: rsync_result
-#  changed_when: 'rsync_result.stdout != ""'
-#  become: yes
-#  become_user: "{{ mig_user }}"
-#- name: update agent configuration mig-agent-conf.go
-##  replace: dest="{{ mig_src }}/conf/mig-agent-conf.go" regexp="{{ item.re }}" replace="{{ item.rep }}"
-#  replace: dest="{{ mig_src }}/conf/mig-agent-conf.go.inc" regexp="{{ item.re }}" replace="{{ item.rep }}"
-#  with_items:
-#    - { re: '^var APIURL string = ".*"$', rep: 'var APIURL string = "http://{{ mig_api_host }}:{{ mig_api_port }}/api/v1/"' }
-#    - { re: '^var AMQPBROKER string = ".*"$', rep: 'var AMQPBROKER string = "http://agent:{{ mig_rabbitmq_agentpass }}@{{ mig_rabbitmq_host }}:{{ mig_rabbitmq_port }}/"' }
-#    - { re: '^var PROXIES = [...]string{`proxy.example.net:3128`, `proxy2.example.net:8080`}', rep: 'var PROXIES = [...]string{{ mig_proxy_list }}' }
+  template: src=mig-agent-conf.go.j2 dest="{{ mig_src }}/conf/mig-agent-conf.go" mode=0644 backup=yes
+  register: agentconfstatus
+#- debug: var=agentconfstatus
+- name: remove existing package if configuration has changed
+  shell: "rm {{ mig_src }}/mig-agent_*.deb {{ mig_src }}/mig-agent-*.rpm"
+## FIXME! fileglob without result
+#  file: dest="{{ item }}" state=absent
+#  with_fileglob:
+#    - "{{ mig_src }}/mig-agent_*.deb"
+#    - "{{ mig_src }}/mig-agent-*.rpm"
+  when: agentconfstatus.changed
+  ignore_errors: true
 
 - name: check if already debian mig-agent package
   shell: "ls {{ mig_src }}/mig-agent_*.deb | grep -v latest"

@@ -20,12 +20,12 @@ Just include this role in your list.
 For example
 
 ```
-- host: migserver
+- hosts: migserver
   roles:
     - Mayeu.RabbitMQ
     - mig
 
-- host: migclient
+- hosts: migclient
   roles:
     - { role: mig, mig_mode: client, mig_api_host: ansiblemigservername }
 
@@ -33,16 +33,24 @@ For example
 
 Currently, I used a slightly modified version of Mayeu.RabbitMQ as normally, this role is expecting to have rabbitmq certificates available on orchestrator and I'm generating them on mig role if not existing.
 
+You should have your investigator gpg keys (fingerprint, pubkey) ready before executing this role or use gpgkey_generate role to do so..
+
 Finish install by
 0) check API is accessible
+```
     $ curl http://localhost/api/v1/
     $ curl http://localhost/api/v1/dashboard | python -mjson.tool
+```
 (or https if enabled)
-1) set gpg keys of investigators
-2) validate w mig-console
-3) run locally mig-agent or deploy it somewhere
+1) validate w mig-console (need to set ~/.migrc, template provided)
+2) run locally mig-agent or deploy it somewhere
+```
 $GOPATH/src/mig.ninja/mig/bin/linux/amd64/mig-agent-latest
-
+```
+if server is withagent enabled
+```
+$ /sbin/mig-agent
+```
 As for any services, you are recommended to do hardening.
 Especially on RabbitMQ part (include erlang epmd)
 
@@ -86,15 +94,38 @@ mig_rabbitmq_clientdir: "/home/{{ mig_user }}/client"
 mig_nginx_use_ssl: false
 mig_nginx_cert: /path/to/cert
 mig_nginx_key: /path/to/key
+
+
+### client
+#mig_src: "{{ mig_gopath }}/src/mig.ninja/mig"
+#mig_agent_bin: "{{ mig_src }}/{{ ansible_os_family }}/{{ ansible_architecture }}/mig-agent-latest"
+#mig_api_host: localhost
+#mig_api_port: 51664
+#mig_path: 
+## agent will use those proxy as rescue network access if direct access not working
+mig_proxy_list: '{`proxy.example.net:3128`, `proxy2.example.net:8080`}'
+mig_client_investigators:
+    - { realname: "{{ gpg_realname }}", fingerprint: '', pubkeyfile: "{{ gpg_pubkeyfileexport }}", pubkey: "{{ lookup('file', '/path/to/pubkey') }}", weight: 2 }
+
 ```
 
 ## Continuous integration
 
-you can test this role with test kitchen.
-In the role folder, run
+This role has a travis basic test (for github), more advanced with kitchen and also a Vagrantfile (test/vagrant).
+
+Once you ensured all necessary roles are present, You can test with:
 ```
+$ cd /path/to/roles/mig
 $ kitchen verify
+$ kitchen login
 ```
+or
+```
+$ cd /path/to/roles/mig/test/vagrant
+$ vagrant up
+$ vagrant ssh
+```
+
 
 Known bugs
 * Ubuntu: the notify 'supervisor restart' fails the first time. not sure
@@ -104,10 +135,13 @@ Known bugs
 
 ## Troubleshooting & Known issues
 
-* memory
-Ensure you have enough memory and swap available
+* Idempotence: NOK because of 
+ - go get (x2)
+ - some rabbitmq module tasks (x4) 
+ - force restart of some service else handlers seems to miss it (x3)
 
-* ansible: go and rabbitmq not idempotent
+* memory
+Ensure you have enough memory and swap available. On vagrant 512M+swap or 1024M seems to be fine.
 
 * mig-scheduler not starting
 ```

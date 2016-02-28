@@ -51,7 +51,7 @@ var LOGGINGCONF = mig.Logging{
 var AMQPBROKER string = "amqp://agent:{{ mig_rabbitmq_agentpass }}@{{ mig_rabbitmq_host }}:{{ mig_rabbitmq_port }}/"
 
 // location of the MIG API, used for discovering the public IP
-var APIURL string = "http://{{ mig_api_host }}:{{ mig_api_port }}/api/v1/""
+var APIURL string = "http://{{ mig_api_host }}:{{ mig_api_port }}/api/v1/"
 
 // if the connection still fails after looking for a HTTP_PROXY, try to use the
 // proxies listed below
@@ -101,7 +101,7 @@ var AGENTACL = [...]string{
 var PUBLICPGPKEYS = [...]string{
 {% for inv in mig_client_investigators %}
 `
-{{ lookup('file', inv.pubkey) }}
+{{ inv.pubkey }}
 `,
 {% endfor %}
 }
@@ -110,12 +110,12 @@ var PUBLICPGPKEYS = [...]string{
 // CA cert that signs the rabbitmq server certificate, for verification
 // of the chain of trust. If rabbitmq uses a self-signed cert, add this
 // cert below
-var CACERT = []byte(`{{ mig_rabbitmq_cacertcrtval }}`)
+var CACERT = []byte(`{{ mig_rabbitmq_cacertcrtval.stdout }}`)
 
 // All clients share a single X509 certificate, for TLS auth on the
 // rabbitmq server. Add the public client cert below.
-var AGENTCERT = []byte(`{{ mig_rabbitmq_clientagentcrt }}`)
+var AGENTCERT = []byte(`{{ mig_rabbitmq_clientagentcrt.stdout }}`)
 
 // Add the private client key below.
-var AGENTKEY = []byte(`{{ mig_rabbitmq_clientagentkey }}`)
+var AGENTKEY = []byte(`{{ mig_rabbitmq_clientagentkey.stdout }}`)
 

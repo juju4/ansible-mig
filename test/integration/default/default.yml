@@ -1,6 +1,7 @@
 ---
 
-- hosts: test-kitchen
+- hosts: all
+#- hosts: test-kitchen
   vars:
     - mig_user: vagrant
     - rabbitmq_cert_source: 'none'
@@ -13,8 +14,12 @@
     - rabbitmq_conf_ssl_options_keyfile: "/etc/rabbitmq/server-{{ ansible_hostname }}.key"
     - rabbitmq_conf_tcp_listeners_address: 127.0.0.1
     - rabbitmq_conf_ssl_listeners_address: 0.0.0.0
+    - mig_client_investigators:
+        - { realname: 'MIG Dupont Investigator', fingerprint: "{{ lookup('file', '/tmp/kitchen/tmp/dupont-fingerprint') }}", pubkeyfile: "/tmp/kitchen/tmp/dupont.asc", pubkey: "{{ lookup('file', '/tmp/kitchen/tmp/dupont.asc') }}", weight: 2 }
+        - { realname: 'MIG dupond Investigator', fingerprint: "{{ lookup('file', '/tmp/kitchen/tmp/dupond-fingerprint') }}", pubkeyfile: "/tmp/kitchen/tmp/dupond.asc", pubkey: "{{ lookup('file', '/tmp/kitchen/tmp/dupond.asc') }}", weight: 2 }
   roles:
-#    - ANXS.postgresql  ## only ubuntu
+    - { role: gpgkey_generate, gpg_user: dupont, gpg_realname: 'MIG Dupont Investigator', gpg_useremail: 'dupont@localhost', gpg_pubkeyfile: 'dupont.pub', gpg_privkeyfile: 'dupont.priv' }
+    - { role: gpgkey_generate, gpg_user: dupond, gpg_realname: 'MIG dupond Investigator', gpg_useremail: 'dupond@localhost', gpg_pubkeyfile: 'dupond.pub', gpg_privkeyfile: 'dupond.priv' }
     - Mayeu.RabbitMQ
     - mig
 

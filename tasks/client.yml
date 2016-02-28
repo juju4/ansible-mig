@@ -17,13 +17,6 @@
     mig_agent_bin: "{{ mig_src }}/{{ mig_sys }}/{{ mig_arch }}/mig-agent-latest.exe"
   when: ansible_system == 'Windows'
 
-## pkg
-#$ l mig-agent*
-#mig-agent-20160101_0.1bf8619.dev-1.x86_64.rpm  mig-agent_20160101-0.1bf8619.dev_amd64.deb
-
-## run
-#$ sudo bin/linux/amd64/mig-agent-latest -d
-
 - set_fact:
     mig_agent_pkg: "{{ mig_src }}/mig-agent_latest-{{ ansible_architecture }}.deb"
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and mig_api_host == 'localhost'
@@ -32,6 +25,7 @@
   when: (ansible_os_family == "RedHat" or ansible_distribution == 'CentOS' or ansible_distribution == 'Red Hat Enterprise Linux') and mig_api_host == 'localhost'
 
 
+## FIXME! handle package update? latest not supported for pkg file
 - name: apt | mig-agent install
   apt: deb="{{ mig_agent_pkg }}" state=present
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
@@ -48,8 +42,9 @@
   file: dest="{{ migagentpath.stdout }}" mode=0500 owner=root group=root state=file
 - name: symlink last mig-agent
   file: src="{{ migagentpath.stdout }}" dest=/sbin/mig-agent state=link
-#- name: execute mig-agent
-#  command: "/sbin/mig-agent -d"
+- name: execute mig-agent
+  command: "/sbin/mig-agent -d"
+  ignore_errors: true
 ## FIXME! missing services/supervisor config
 
 

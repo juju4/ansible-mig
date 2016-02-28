@@ -5,6 +5,17 @@ mig_mode: server
 
 ### server
 mig_user: "{{ ansible_ssh_user }}"
+## https://github.com/debops/ansible-libvirtd/commit/6f3916bd3965c62d8f84c87c9283d9ca6d2ada50
+## http://docs.debops.org/en/latest/ansible/roles/ansible-atd/docs/defaults.html
+## https://github.com/ansible/ansible/issues/14195
+## got lookup on host, not on guest...
+#mig_user: '{{ (ansible_ssh_user
+#            if (ansible_ssh_user | bool and
+#            ansible_ssh_user != "root")
+#            else lookup("env", "USER")) }}'
+## got lookup on host, not on guest...
+#mig_user: "{{ ansible_user | default(lookup('env', 'USER'), True) }}"
+
 mig_gover: 1.5.2
 mig_gopath: "/home/{{ mig_user }}/go"
 mig_src: "{{ mig_gopath }}/src/mig.ninja/mig"
@@ -72,6 +83,10 @@ gpg_expire: 360
 ## agent will use those proxy as rescue network access if direct access not working
 mig_proxy_list: '{`proxy.example.net:3128`, `proxy2.example.net:8080`}'
 mig_client_investigators:
-    - { realname: "{{ gpg_realname }}", fingerprint: '', pubkey: "{{ gpg_userhome }}/{{ gpg_pubkeyfileexport }}", weight: 2 }
-#    - { realname: "{{ gpg_realname }}", fingerprint: '', pubkeyfile: "{{ gpg_pubkeyfileexport }}", pubkey: "{{ lookup('file', {{ gpg_pubkeyfileexport }}) }}", weight: 2 }
+    - { realname: "MIG Example investigator", fingerprint: 'C070C873FDC2B5284C1D60089D6B3D2F773F5860', pubkeyfile: "files/vagrant.asc", pubkey: "{{ lookup('file', 'files/vagrant.asc') }}", weight: 2 }
+## Note: don't try to lookup on same line var or get:
+##   UnicodeDecodeError: 'utf8' codec can't decode byte 0x99 in position 0: invalid start byte
+## ex:
+##    - { realname: 'MIG Dupont Investigator', fingerprint: "{{ lookup('file', 'tmp/dupont-fingerprint') }}", pubkeyfile: "tmp/dupont.asc", pubkey: "{{ lookup('file', gpg_pubkeyfile) }}", weight: 2 }
+
 

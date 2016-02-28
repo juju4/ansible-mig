@@ -1,0 +1,13 @@
+---
+
+- hosts: all
+#- hosts: migserver
+  roles:
+    - { role: gpgkey_generate, gpg_user: dupont, gpg_realname: 'MIG Dupont Investigator', gpg_useremail: 'dupont@localhost', gpg_pubkeyfile: 'dupont.pub', gpg_privkeyfile: 'dupont.priv' }
+    - { role: gpgkey_generate, gpg_user: dupond, gpg_realname: 'MIG dupond Investigator', gpg_useremail: 'dupond@localhost', gpg_pubkeyfile: 'dupond.pub', gpg_privkeyfile: 'dupond.priv' }
+    - Mayeu.RabbitMQ
+    - mig
+
+- hosts: migclient
+  roles:
+    - { role: mig, mig_mode: client, mig_api_host: ansiblemigservername }

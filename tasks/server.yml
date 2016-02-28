@@ -12,6 +12,13 @@
 - include: golang.yml
   when: not go_installed.stat.exists
 
+- debug: var=mig_user
+- debug: var=ansible_ssh_user
+- debug: var=ansible_user
+- debug: var=remote_user
+- fail: msg="mig_user is not defined or empty!"
+  when: mig_user is not defined or mig_user == ''
+
 - name: Update PATH and GOPATH in bashrc - root
   lineinfile:
     dest: "{{ item.d }}"
@@ -27,6 +34,11 @@
     - { d: "/root/.bashrc", r: "/usr/local/bin", l: 'export PATH=$PATH\:/usr/local/bin' }
 - stat: path="/home/{{ mig_user }}/.bashrc"
   register: homemiguser
+#- debug: var=homemiguser
+## FIXME! https://github.com/ansible/ansible/issues/14597
+- set_fact:
+    mig_user: 'vagrant'
+    when: mig_user is not defined or mig_user != "" or mig_user == null
 - name: Update PATH and GOPATH in bashrc - mig_user
   lineinfile:
     dest: "{{ item.d }}"
@@ -37,7 +49,7 @@
     create: False
   with_items:
     - { d: "/home/{{ mig_user }}/.bashrc", r: "go/bin", l: 'export PATH=$PATH\:/usr/local/go/bin' }
-    - { d: "/home/{{ mig_user }}/.bashrc", r: "GOPATH={{ mig_gopath }}", l: 'export GOPATH={{ mig_gopath }}' }
+    - { d: "/home/{{ mig_user }}/.bashrc", r: "GOPATH={{ mig_gopath }}", l: "export GOPATH={{ mig_gopath }}" }
 ## on centos7, missing this for fpm
     - { d: "/home/{{ mig_user }}/.bashrc", r: "/usr/local/bin", l: 'export PATH=$PATH\:/usr/local/bin' }
   when: homemiguser.stat.exists
@@ -190,12 +202,18 @@
   register: rsync_result
   changed_when: 'rsync_result.stdout != ""'
   when: not apicfg.stat.exists
+## FIXME! can't use lineinfile as there are multiple occurrence of port/password/host = ini module
 - name: update api configuration
-  replace: dest="/etc/mig/api.cfg" regexp="{{ item.re }}" replace="{{ item.rep }}"
+#  replace: dest="/etc/mig/api.cfg" regexp="{{ item.re }}" replace="{{ item.rep }}"
+#  with_items:
+#    - { re: 'password = "123456"', rep: 'password = "{{ mig_db_migapi_pass }}"' }
+#    - { re: 'port = 12345', rep: 'port = {{ mig_api_port }}' }
+#    - { re: 'host = "http://localhost:12345"', rep: 'host = "http://localhost:{{ mig_api_port }}"' }
+  ini_file: dest=/etc/mig/api.cfg section="{{ item.s }}" option="{{ item.o }}" value="{{ item.v }}" mode=0600 owner="{{ mig_user }}" backup=yes
   with_items:
-    - { re: 'password = "123456"', rep: 'password = "{{ mig_db_migapi_pass }}"' }
-    - { re: 'port = 12345', rep: 'port = {{ mig_api_port }}' }
-    - { re: 'host = "http://localhost:12345"', rep: 'host = "http://localhost:{{ mig_api_port }}"' }
+    - { s: 'postgres', o: 'password', v: "{{ mig_db_migapi_pass }}" }
+    - { s: 'server', o: 'port', v: "{{ mig_api_port }}" }
+    - { s: 'server', o: 'host', v: "http://localhost:{{ mig_api_port }}" }
   notify:
     - restart supervisor
 
@@ -236,11 +254,9 @@
 - name: add some nrpe commands for monitoring
   copy: src=mig-nrpe.cfg dest=/etc/nagios/nrpe.d/mig-nrpe.cfg mode=0644
 
-- include: gpg-example.yml
-  when: mig_gpg_example is defined and mig_gpg_example
-- name: create user migrc
-  template: src=migrc dest="{{ gpg_home }}/.migrc" mode=0600 owner="{{ gpg_user }}"
-  when: gpgkeys.stdout == ""
+#- name: create user migrc
+#  template: src=migrc dest="{{ gpg_home }}/.migrc" mode=0600 owner="{{ gpg_user }}"
+#  when: gpgkeys.stdout == ""
 
 - name: Ensure supervisor is enabled and started
   service: name="{{ supervisor_service }}" state=started enabled=yes
