@@ -32,9 +32,9 @@
 #- set_fact:
 #    mig_user: 'vagrant'
 #  when: env.stdout.find('SUDO_COMMAND=/bin/bash -c ansible-playbook --inventory-file=/tmp/kitchen/hosts -c local -M /tmp/kitchen/modules /tmp/kitchen/default.yml') != -1 or env.stdout.find('SUDO_COMMAND=/tmp/verifier/bin/busser test') != -1
-#- set_fact:
-#    mig_user: 'root'
-#  when: env.stdout.find('TRAVIS=true') != -1
+- set_fact:
+    mig_user: 'travis'
+  when: env.stdout.find('TRAVIS=true') != -1
 - debug: var=mig_user
 
 - set_fact:
