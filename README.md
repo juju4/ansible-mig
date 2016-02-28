@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/juju4/ansible-mig.svg?branch=master)](https://travis-ci.org/juju4/ansible-mig)
+
 # MIG ansible role
 
 A simple ansible role to setup MIG aka Mozilla InvestiGator
@@ -8,6 +10,7 @@ http://mig.mozilla.org/
 ### Ansible
 It was tested on the following versions:
  * 1.9
+ * 2.0
 
 ### Operating systems
 
