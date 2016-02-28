@@ -7,7 +7,7 @@
   gem: name=fpm state=present user_install=no
 
 - name: Set Agent configuration - mig-agent.cfg
-#  template: src=mig-agent-conf.go dest=/home/{{ mig_user }}/mig/conf/mig-agent-conf.go owner={{ mig_user }}
+#  template: src=mig-agent-conf.go dest={{ mig_home }}/mig/conf/mig-agent-conf.go owner={{ mig_user }}
   command: "rsync -ci {{ mig_src }}/conf/mig-agent.cfg.inc {{ mig_src }}/conf/mig-agent.cfg"
   register: rsync_result
   changed_when: 'rsync_result.stdout != ""'

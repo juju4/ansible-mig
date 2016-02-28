@@ -6,6 +6,6 @@
 {% endif %}
 
 [gpg]
-        home = "/home/{{ mig_user }}/.gnupg/"
+        home = "{{ mig_home }}/.gnupg/"
         keyid = "{{ gpg_user_fingerprint.stdout }}"
 
