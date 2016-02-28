@@ -5,6 +5,15 @@
 
 - name: install gem fpm for agent packaging
   gem: name=fpm state=present user_install=no
+## FIXME! travis not getting fpm...
+- command: "which fpm"
+  register: whichfpm
+  changed_when: false
+- debug: var=whichfpm
+- command: "env"
+  register: env 
+  changed_when: false
+- debug: var=env
 
 - name: Set Agent configuration - mig-agent.cfg
 #  template: src=mig-agent-conf.go dest={{ mig_home }}/mig/conf/mig-agent-conf.go owner={{ mig_user }}
