@@ -1,5 +1,13 @@
 ---
 
+- set_fact:
+    certificate_cn: "{{ ansible_fqdn }}"
+## Travis error: "asn1 encoding routines:ASN1_mbstring_ncopy:string too longi:a_mbstr.c:154:maxsize=64" as cn=testing-gce-4d114f77-0ff1-41fb-bd33-22879d3249da.c.eco-emissary-99515.internal
+- set_fact:
+    certificate_cn: "testing-travis.internal"
+  when: env.stdout.find('TRAVIS=true') != -1
+
+
 - name: RabbitMQ openssl configuration
   template: src=openssl.cnf dest={{ mig_home }}/rabbitmq-openssl.cnf mode=0600 owner={{ mig_user }}
 
@@ -19,10 +27,10 @@
   shell: "{{ item }} chdir={{ mig_home }}"
   with_items:
 ## certificate authority
-    - "openssl req -x509 -newkey rsa:{{ mig_rabbitmq_rsakeysize }} -days {{ mig_rabbitmq_certduration }} -keyout {{ mig_rabbitmq_cakey }} -out {{ mig_rabbitmq_cacertcrt }} -subj \"{{ mig_rabbitmq_certinfo }}/CN={{ ansible_fqdn }}\" -extensions root_ca -config {{ mig_home }}/rabbitmq-openssl.cnf -nodes"
+    - "openssl req -x509 -newkey rsa:{{ mig_rabbitmq_rsakeysize }} -days {{ mig_rabbitmq_certduration }} -keyout {{ mig_rabbitmq_cakey }} -out {{ mig_rabbitmq_cacertcrt }} -subj \"{{ mig_rabbitmq_certinfo }}/CN={{ certificate_cn }}\" -extensions root_ca -config {{ mig_home }}/rabbitmq-openssl.cnf -nodes"
 ## server
-#    - "openssl req -newkey rsa:{{ mig_rabbitmq_rsakeysize }} -days {{ mig_rabbitmq_certduration }} -keyout {{ mig_rabbitmq_serverkey }} -out {{ mig_rabbitmq_servercsr }} -subj \"{{ mig_rabbitmq_certinfo }}/CN={{ ansible_fqdn }}/O=RabbitMQ server/\" -nodes -config {{ mig_home }}/rabbitmq-openssl.cnf" ## interactive
-    - "openssl req -newkey rsa:{{ mig_rabbitmq_rsakeysize }} -days {{ mig_rabbitmq_certduration }} -keyout {{ mig_rabbitmq_serverkey }} -out {{ mig_rabbitmq_servercsr }} -subj \"{{ mig_rabbitmq_certinfo }}/CN={{ ansible_fqdn }}/O=RabbitMQ server/\" -nodes"
+#    - "openssl req -newkey rsa:{{ mig_rabbitmq_rsakeysize }} -days {{ mig_rabbitmq_certduration }} -keyout {{ mig_rabbitmq_serverkey }} -out {{ mig_rabbitmq_servercsr }} -subj \"{{ mig_rabbitmq_certinfo }}/CN={{ certificate_cn }}/O=RabbitMQ server/\" -nodes -config {{ mig_home }}/rabbitmq-openssl.cnf" ## interactive
+    - "openssl req -newkey rsa:{{ mig_rabbitmq_rsakeysize }} -days {{ mig_rabbitmq_certduration }} -keyout {{ mig_rabbitmq_serverkey }} -out {{ mig_rabbitmq_servercsr }} -subj \"{{ mig_rabbitmq_certinfo }}/CN={{ certificate_cn }}/O=RabbitMQ server/\" -nodes"
     - "yes | openssl ca -extensions server_cert -in {{ mig_rabbitmq_servercsr }} -out {{ mig_rabbitmq_servercrt }} -config {{ mig_home }}/rabbitmq-openssl.cnf"
   become_user: "{{ mig_user }}"
   become: true
@@ -31,7 +39,7 @@
 - stat: path="{{ mig_rabbitmq_clientdir }}/agent.csr"
   register: agentcsr
 - name: Create certificates for scheduler, workers and agents
-  command: "openssl req -new -newkey rsa:{{ mig_rabbitmq_rsakeysize }} -keyout {{ mig_rabbitmq_clientdir }}/{{ item }}.key -nodes -out {{ mig_rabbitmq_clientdir }}/{{ item }}.csr -config {{ mig_home }}/rabbitmq-openssl.cnf -subj \"{{ mig_rabbitmq_certinfo }}/CN={{ ansible_fqdn }}/O={{ item }}/\""
+  command: "openssl req -new -newkey rsa:{{ mig_rabbitmq_rsakeysize }} -keyout {{ mig_rabbitmq_clientdir }}/{{ item }}.key -nodes -out {{ mig_rabbitmq_clientdir }}/{{ item }}.csr -config {{ mig_home }}/rabbitmq-openssl.cnf -subj \"{{ mig_rabbitmq_certinfo }}/CN={{ certificate_cn }}/O={{ item }}/\""
   with_items:
     - scheduler
     - worker
