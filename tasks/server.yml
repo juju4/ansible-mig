@@ -4,12 +4,15 @@
   register: go_installed
 
 - include: debian.yml
+  become: yes
   when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
 
 - include: redhat.yml
+  become: yes
   when: ansible_os_family == "RedHat" or ansible_distribution == 'CentOS' or ansible_distribution == 'Red Hat Enterprise Linux'
 
 - include: golang.yml
+  become: yes
   when: not go_installed.stat.exists
 
 - debug: var=mig_user
@@ -20,12 +23,18 @@
   when: mig_user is not defined or mig_user == ''
 ## FIXME! https://github.com/ansible/ansible/issues/14597
 - debug: var=mig_user
+- shell: env
+  changed_when: false
+  register: env
+- debug: var=env
 - set_fact:
-    mig_user: 'vagrant'
-  when: env.stdout.find('SUDO_COMMAND=/bin/bash -c ansible-playbook --inventory-file=/tmp/kitchen/hosts -c local -M /tmp/kitchen/modules /tmp/kitchen/default.yml') != -1 or env.stdout.find('SUDO_COMMAND=/tmp/verifier/bin/busser test') != -1
-- set_fact:
-    mig_user: 'root'
-  when: env.stdout.find('TRAVIS=true') != -1
+    mig_user: "{{ lookup('env', 'SUDO_USER') }}"
+#- set_fact:
+#    mig_user: 'vagrant'
+#  when: env.stdout.find('SUDO_COMMAND=/bin/bash -c ansible-playbook --inventory-file=/tmp/kitchen/hosts -c local -M /tmp/kitchen/modules /tmp/kitchen/default.yml') != -1 or env.stdout.find('SUDO_COMMAND=/tmp/verifier/bin/busser test') != -1
+#- set_fact:
+#    mig_user: 'root'
+#  when: env.stdout.find('TRAVIS=true') != -1
 - debug: var=mig_user
 
 - set_fact:
