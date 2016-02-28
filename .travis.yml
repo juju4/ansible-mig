@@ -8,9 +8,13 @@ python: "2.7"
 before_install:
  - sudo apt-get update -qq
  - sudo apt-get install -qq python-apt python-pycurl
+## dependencies
  - git clone https://github.com/juju4/ansible-gpgkey_generate.git ../gpgkey_generate
  - git clone https://github.com/juju4/ansible-playbook-rabbitmq.git ../Mayeu.RabbitMQ
  - ln -s ansible-mig ../mig
+## for local travis execution as we use same default.yml than kitchen
+ - mkdir /tmp/kitchen
+ - ln -s /home/travis/build/juju4/ansible-mig/test/integration/default/tmp /tmp/kitchen/tmp
 install:
   - pip install ansible
 #  - "printf '[defaults]\nroles_path = ../' > ansible.cfg"
