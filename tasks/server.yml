@@ -264,9 +264,9 @@
 - name: add some nrpe commands for monitoring
   copy: src=mig-nrpe.cfg dest=/etc/nagios/nrpe.d/mig-nrpe.cfg mode=0644
 
-#- name: create user migrc
-#  template: src=migrc dest="{{ gpg_home }}/.migrc" mode=0600 owner="{{ gpg_user }}"
-#  when: gpgkeys.stdout == ""
+- name: create user migrc
+  template: src=migrc dest="{{ mig_home }}/.migrc" mode=0600 owner="{{ mig_user }}"
+  when: migrc_user_fingerprint is defined and migrc_user_fingerprint != ""
 
 - name: Ensure supervisor is enabled and started
   service: name="{{ supervisor_service }}" state=started enabled=yes

@@ -7,5 +7,5 @@
 
 [gpg]
         home = "{{ mig_home }}/.gnupg/"
-        keyid = "{{ gpg_user_fingerprint.stdout }}"
+        keyid = "{{ migrc_user_fingerprint }}"
 

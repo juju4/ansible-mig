@@ -42,9 +42,14 @@
   file: dest="{{ migagentpath.stdout }}" mode=0500 owner=root group=root state=file
 - name: symlink last mig-agent
   file: src="{{ migagentpath.stdout }}" dest=/sbin/mig-agent state=link
-- name: execute mig-agent
-  command: "/sbin/mig-agent -d"
-  ignore_errors: true
+#- name: execute mig-agent
+#  command: "/sbin/mig-agent -d"
+#  ignore_errors: true
 ## FIXME! missing services/supervisor config
+
+- name: set supervisor config to manage MIG client
+  template: src=supervisord-migagent.ini dest={{ supervisor_confdir }}/migagent.{{ supervisor_ext }} mode=0644
+  notify:
+    - restart supervisor
 
 

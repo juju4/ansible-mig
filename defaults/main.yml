@@ -20,7 +20,8 @@ mig_gover: 1.5.2
 mig_gopath: "/home/{{ mig_user }}/go"
 mig_src: "{{ mig_gopath }}/src/mig.ninja/mig"
 mig_api_host: localhost
-mig_api_port: 51664
+#mig_api_port: 51664
+mig_api_port: 1664
 mig_server_withagent: true
 
 mig_db_migadmin_pass: xxx
@@ -29,6 +30,7 @@ mig_db_migscheduler_pass: xxx
 
 mig_rabbitmq_host: localhost
 mig_rabbitmq_port: 5672
+mig_rabbitmq_vhost: mig
 mig_rabbitmq_adminpass: xxx
 mig_rabbitmq_schedpass: xxx
 mig_rabbitmq_agentpass: xxx
@@ -59,29 +61,9 @@ mig_nginx_use_ssl: false
 mig_nginx_cert: /path/to/cert
 mig_nginx_key: /path/to/key
 
-## do you want to create investigator1 gpg user?
-mig_gpg_example: true
-gpg_user: "vagrant"
-gpg_realname: "MIG Example investigator"
-gpg_userhome: '/home/vagrant'
-gpg_useremail: "{{ gpg_user }}@localhost"
-gpg_pubkeyfile: "pubkey"
-gpg_privkeyfile: "privkey"
-gpg_pubkeyfileexport: "{{ gpg_user }}.asc"
-
-gpg_keylength: 2048
-gpg_subkeylength: 2048
-gpg_expire: 360
-
-
-### client
-#mig_src: "{{ mig_gopath }}/src/mig.ninja/mig"
-#mig_agent_bin: "{{ mig_src }}/{{ ansible_os_family }}/{{ ansible_architecture }}/mig-agent-latest"
-#mig_api_host: localhost
-#mig_api_port: 51664
-#mig_path: 
 ## agent will use those proxy as rescue network access if direct access not working
-mig_proxy_list: '{`proxy.example.net:3128`, `proxy2.example.net:8080`}'
+#mig_proxy_list: '{`proxy.example.net:3128`, `proxy2.example.net:8080`}'
+mig_proxy_list: ''
 mig_client_investigators:
     - { realname: "MIG Example investigator", fingerprint: 'C070C873FDC2B5284C1D60089D6B3D2F773F5860', pubkeyfile: "files/vagrant.asc", pubkey: "{{ lookup('file', 'files/vagrant.asc') }}", weight: 2 }
 ## Note: don't try to lookup on same line var or get:
@@ -89,4 +71,13 @@ mig_client_investigators:
 ## ex:
 ##    - { realname: 'MIG Dupont Investigator', fingerprint: "{{ lookup('file', 'tmp/dupont-fingerprint') }}", pubkeyfile: "tmp/dupont.asc", pubkey: "{{ lookup('file', gpg_pubkeyfile) }}", weight: 2 }
 
+## if you want to set current user migrc?
+migrc_user_fingerprint:
 
+
+### client
+#mig_src: "{{ mig_gopath }}/src/mig.ninja/mig"
+#mig_agent_bin: "{{ mig_src }}/{{ ansible_os_family }}/{{ ansible_architecture }}/mig-agent-latest"
+#mig_api_host: localhost
+#mig_api_port: 51664
+#mig_path:

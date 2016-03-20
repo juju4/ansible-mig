@@ -31,12 +31,18 @@ For example
 - hosts: migclient
   roles:
     - { role: mig, mig_mode: client, mig_api_host: ansiblemigservername }
+# OR
+- hosts: migclient2
+  roles:
+    - { role: migclient, mig_api_host: ansiblemigservername }
 
 ```
 
 Currently, I used a slightly modified version of Mayeu.RabbitMQ as normally, this role is expecting to have rabbitmq certificates available on orchestrator and I'm generating them on mig role if not existing.
 
 You should have your investigator gpg keys (fingerprint, pubkey) ready before executing this role or use gpgkey_generate role to do so..
+
+It is advised to use separate role migclient for client install as mig role as a role dependency to RabbitMQ and it does not seem possible to have it conditional currently. (https://groups.google.com/forum/#!msg/ansible-devel/NsgcczA8czs/fwjrNJB5a4QJ)
 
 Finish install by
 0) check API is accessible
@@ -58,6 +64,12 @@ As for any services, you are recommended to do hardening.
 Especially on RabbitMQ part (include erlang epmd)
 
 Some nrpe commands are included to help for monitoring.
+
+Post-install, check your migrc and run mig-console
+```
+$ cat ~/.migrc
+$ $HOME/go/src/mig.ninja/mig/bin/linux/amd64/mig-console
+```
 
 ## Variables
 

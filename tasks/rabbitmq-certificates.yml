@@ -11,15 +11,18 @@
 - name: RabbitMQ openssl configuration
   template: src=openssl.cnf dest={{ mig_home }}/rabbitmq-openssl.cnf mode=0600 owner={{ mig_user }}
 
-- file: dest="{{ item }}" state=directory mode=0700 owner="{{ mig_user }}"
+- name: Ensure appropriate permissions and owner
+  file: dest="{{ item }}" state=directory mode=0700 owner="{{ mig_user }}"
   with_items:
     - "{{ mig_rabbitmq_cadir }}"
     - "{{ mig_rabbitmq_cadir }}/certs"
     - "{{ mig_rabbitmq_serverdir }}"
     - "{{ mig_rabbitmq_clientdir }}"
 
-- lineinfile: dest="{{ mig_rabbitmq_cadir }}/serial" line=1000 create=yes
-- file: dest="{{ mig_rabbitmq_cadir }}/index" state=touch
+- name: Check serial openssl config
+  lineinfile: dest="{{ mig_rabbitmq_cadir }}/serial" line=1000 create=yes
+- name: touch index openssl config
+  file: dest="{{ mig_rabbitmq_cadir }}/index" state=touch
 
 - stat: path="{{ mig_rabbitmq_servercrt }}"
   register: servercrt

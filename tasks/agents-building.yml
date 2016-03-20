@@ -11,7 +11,7 @@
   changed_when: false
 - debug: var=whichfpm
 - command: "env"
-  register: env 
+  register: env
   changed_when: false
 - debug: var=env
 
@@ -74,7 +74,7 @@
 - name: Build MIG platform agent packages - deb
   command: "make deb-agent chdir={{ mig_src }}"
   environment:
-    PATH: "/usr/local/bin:/usr/bin:/bin:/usr/local/sbin:/usr/sbin:/usr/local/go/bin:/usr/local/bin"
+    PATH: "/usr/local/bin:/usr/bin:/bin:/usr/local/sbin:/usr/sbin:/usr/local/go/bin"
     GOPATH: "{{ mig_gopath }}"
     BUILDENV: prod
   become: yes

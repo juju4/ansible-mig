@@ -46,6 +46,7 @@
     nginx_conf: /etc/nginx/conf.d
     supervisor_confdir: /etc/supervisord.d
     supervisor_targetconf: mig.ini
+    supervisor_ext: ini
     supervisor_service: supervisord
 
 ## default configuration file on centos include http server which would conflict with ours

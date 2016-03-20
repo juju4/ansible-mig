@@ -48,7 +48,7 @@ var LOGGINGCONF = mig.Logging{
 // variables HTTP_PROXY and HTTPS_PROXY, and retry the connection using
 // HTTP CONNECT proxy tunneling
 //var AMQPBROKER string = "amqp://guest:guest@localhost:5672/"
-var AMQPBROKER string = "amqp://agent:{{ mig_rabbitmq_agentpass }}@{{ mig_rabbitmq_host }}:{{ mig_rabbitmq_port }}/"
+var AMQPBROKER string = "amqp://agent:{{ mig_rabbitmq_agentpass }}@{{ mig_rabbitmq_host }}:{{ mig_rabbitmq_port }}/{{ mig_rabbitmq_vhost }}"
 
 // location of the MIG API, used for discovering the public IP
 var APIURL string = "http://{{ mig_api_host }}:{{ mig_api_port }}/api/v1/"

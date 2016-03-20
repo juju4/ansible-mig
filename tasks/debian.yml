@@ -27,4 +27,5 @@
     nginx_conf: /etc/nginx/sites-available
     supervisor_confdir: /etc/supervisor/conf.d
     supervisor_targetconf: mig.conf
+    supervisor_ext: conf
     supervisor_service: supervisor
