@@ -4,7 +4,8 @@ mig_mode: server
 #mig_mode: client
 
 ### server
-mig_user: "{{ ansible_ssh_user }}"
+mig_user: "mig"
+#mig_user: "{{ ansible_ssh_user }}"
 ## https://github.com/debops/ansible-libvirtd/commit/6f3916bd3965c62d8f84c87c9283d9ca6d2ada50
 ## http://docs.debops.org/en/latest/ansible/roles/ansible-atd/docs/defaults.html
 ## https://github.com/ansible/ansible/issues/14195

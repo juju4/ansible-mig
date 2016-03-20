@@ -16,26 +16,8 @@
   when: not go_installed.stat.exists
 
 - debug: var=mig_user
-- debug: var=ansible_ssh_user
-- debug: var=ansible_user
-- debug: var=remote_user
 - fail: msg="mig_user is not defined or empty!"
   when: mig_user is not defined or mig_user == ''
-## FIXME! https://github.com/ansible/ansible/issues/14597
-- debug: var=mig_user
-- shell: env
-  changed_when: false
-  register: env
-- debug: var=env
-- set_fact:
-    mig_user: "{{ lookup('env', 'SUDO_USER') }}"
-#- set_fact:
-#    mig_user: 'vagrant'
-#  when: env.stdout.find('SUDO_COMMAND=/bin/bash -c ansible-playbook --inventory-file=/tmp/kitchen/hosts -c local -M /tmp/kitchen/modules /tmp/kitchen/default.yml') != -1 or env.stdout.find('SUDO_COMMAND=/tmp/verifier/bin/busser test') != -1
-- set_fact:
-    mig_user: 'travis'
-  when: env.stdout.find('TRAVIS=true') != -1
-- debug: var=mig_user
 
 - set_fact:
     mig_home: '/root'
@@ -44,6 +26,9 @@
     mig_home: "/home/{{ mig_user }}"
   when: mig_user != 'root'
 
+- name: Add mig_user user
+  user: "name={{ mig_user }} home={{ mig_home }}"
+  become: yes
 
 - stat: path="{{ mig_home }}/.bashrc"
   register: homemiguser
@@ -62,6 +47,8 @@
     - { d: "{{ mig_home }}/.bashrc", r: "GOPATH={{ mig_gopath }}", l: "export GOPATH={{ mig_gopath }}" }
 ## on centos7, missing this for fpm
     - { d: "{{ mig_home }}/.bashrc", r: "/usr/local/bin", l: 'export PATH=$PATH\:/usr/local/bin' }
+  become: yes
+  become_user: "{{ mig_user }}"
   when: homemiguser.stat.exists
 
 ## http://mig.mozilla.org/doc/configuration.rst.html
@@ -164,10 +151,13 @@
   when: not dbinit.stat.exists
 - file: dest={{ mig_home }}/.dbinit state=touch
   when: not dbinit.stat.exists
+  become: yes
+  become_user: "{{ mig_user }}"
 
 
 - name: Ensure mig configuration dir exists
   file: dest=/etc/mig state=directory mode=0755
+  become: yes
 
 - stat: path="/etc/mig/scheduler.cfg"
   register: schedulercfg
@@ -187,12 +177,14 @@
     - { re: '^;   cacert  = "/path/to/cacert.pem"', rep: '   cacert  = "/etc/mig/ca.crt"' }
     - { re: '^;   tlscert = "/path/to/cert.pem"', rep: '   tlscert  = "/etc/mig/scheduler.crt"' }
     - { re: '^;   tlskey  = "/path/to/key.pem"', rep: '   tlskey  = "/etc/mig/scheduler.key"' }
+  become: yes
   notify:
     - restart supervisor
 - name: update scheduler configuration - ssl
   replace: dest="/etc/mig/scheduler.cfg" regexp="{{ item.re }}" replace="{{ item.rep }}"
   with_items:
     - { re: '^   usetls  = true', rep: '   usetls  = false' }
+  become: yes
   notify:
     - restart supervisor
   when: mig_nginx_use_ssl is defined and not mig_nginx_use_ssl
@@ -211,6 +203,7 @@
   command: "rsync -ci {{ mig_src }}/conf/api.cfg.inc /etc/mig/api.cfg"
   register: rsync_result
   changed_when: 'rsync_result.stdout != ""'
+  become: yes
   when: not apicfg.stat.exists
 ## FIXME! can't use lineinfile as there are multiple occurrence of port/password/host = ini module
 - name: update api configuration
@@ -224,60 +217,76 @@
     - { s: 'postgres', o: 'password', v: "{{ mig_db_migapi_pass }}" }
     - { s: 'server', o: 'port', v: "{{ mig_api_port }}" }
     - { s: 'server', o: 'host', v: "http://localhost:{{ mig_api_port }}" }
+  become: yes
   notify:
     - restart supervisor
 
 - name: set nginx as reverse proxy to access MIG API - ssl
   template: src=mig-ssl.conf dest={{ nginx_conf }}/mig-ssl.conf mode=0644
+  become: yes
   notify:
     - restart nginx
   when: mig_nginx_use_ssl is defined and mig_nginx_use_ssl
 - name: active nginx configuration - ssl
   file: src=/etc/nginx/sites-available/mig-ssl.conf dest=/etc/nginx/sites-enabled/mig-ssl.conf state=link
+  become: yes
   notify:
     - restart nginx
   when: mig_nginx_use_ssl is defined and mig_nginx_use_ssl and (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
 
 - name: set nginx as reverse proxy to access MIG API - no ssl
   template: src=mig.conf dest={{ nginx_conf }}/mig.conf mode=0644
+  become: yes
   notify:
     - restart nginx
   when: mig_nginx_use_ssl is defined and not mig_nginx_use_ssl
 - name: active nginx configuration - no ssl
   file: src=/etc/nginx/sites-available/mig.conf dest=/etc/nginx/sites-enabled/mig.conf state=link
+  become: yes
   notify:
     - restart nginx
   when: mig_nginx_use_ssl is defined and not mig_nginx_use_ssl and (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
 
 - name: disable nginx default website
   file: dest=/etc/nginx/sites-enabled/default state=absent
+  become: yes
   notify:
     - restart nginx
 
 - name: set supervisor config to manage MIG daemons
   template: src=supervisord.ini dest={{ supervisor_confdir }}/{{ supervisor_targetconf }} mode=0644
+  become: yes
   notify:
     - restart supervisor
 
 - name: Ensure nrpe.d dir exists
   file: dest=/etc/nagios/nrpe.d state=directory mode=0755
+  become: yes
 - name: add some nrpe commands for monitoring
   copy: src=mig-nrpe.cfg dest=/etc/nagios/nrpe.d/mig-nrpe.cfg mode=0644
+  become: yes
 
-- name: create user migrc
+- set_fact:
+    migrc_user_fingerprint: "{{ mig_client_investigators.0.fingerprint }}"
+- name: create user migrc with first investigator
   template: src=migrc dest="{{ mig_home }}/.migrc" mode=0600 owner="{{ mig_user }}"
+  become: yes
+  become_user: "{{ mig_user }}"
   when: migrc_user_fingerprint is defined and migrc_user_fingerprint != ""
 
 - name: Ensure supervisor is enabled and started
   service: name="{{ supervisor_service }}" state=started enabled=yes
+  become: yes
 - name: Ensure nginx is enabled and started
   service: name=nginx state=started enabled=yes
+  become: yes
 - name: Manual restart - bug
   service: name="{{ item }}" state=restarted
   with_items:
     - "{{ supervisor_service }}"
     - nginx
     - rabbitmq-server
+  become: yes
   ignore_errors: true
 
 ## must be after investigator key generation

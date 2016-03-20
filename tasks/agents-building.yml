@@ -65,6 +65,9 @@
   when: agentconfstatus.changed
   ignore_errors: true
 
+- name: fix travis path issue
+  replace: dest="{{ mig_src }}/Makefile" regexp="fpm " replace="/usr/local/bin/fpm "
+
 - name: check if already debian mig-agent package
   shell: "ls {{ mig_src }}/mig-agent_*.deb | grep -v latest"
   register: migagentpkg1
@@ -79,7 +82,7 @@
     BUILDENV: prod
   become: yes
   become_user: "{{ mig_user }}"
-  when: migagentpkg1.rc != 0 or migagentpkg1.sdout == ''
+  when: migagentpkg1.rc != 0 or migagentpkg1.stdout == ''
   ignore_errors: true
 - name: get current name of debian mig-agent package
   shell: "ls -Art {{ mig_src }}/mig-agent_*.deb | grep -v latest | tail -1"
@@ -97,12 +100,12 @@
 - name: Build MIG platform agent packages - rpm
   command: "make rpm-agent chdir={{ mig_src }}"
   environment:
-    PATH: "/usr/local/bin:/usr/bin:/bin:/usr/local/sbin:/usr/sbin:/usr/local/go/bin:/usr/local/bin"
+    PATH: "/usr/local/bin:/usr/bin:/bin:/usr/local/sbin:/usr/sbin:/usr/local/go/bin"
     GOPATH: "{{ mig_gopath }}"
     BUILDENV: prod
   become: yes
   become_user: "{{ mig_user }}"
-  when: migagentpkg2.rc != 0 or migagentpkg2.sdout == ''
+  when: migagentpkg2.rc != 0 or migagentpkg2.stdout == ''
   ignore_errors: true
 #    - "make dmg-agent"     ## only on MacOS
 #    - "make msi-agent"     ## Need wixl/no package before wily
@@ -121,7 +124,7 @@
 ##  command: "make mig-agent msi-agent chdir={{ mig_src }}"
 #  command: "make mig-agent chdir={{ mig_src }}"
 #  environment:
-#    PATH: "/usr/local/bin:/usr/bin:/bin:/usr/local/sbin:/usr/sbin:/usr/local/go/bin:/usr/local/bin"
+#    PATH: "/usr/local/bin:/usr/bin:/bin:/usr/local/sbin:/usr/sbin:/usr/local/go/bin"
 #    GOPATH: "{{ mig_gopath }}"
 #    BUILDENV: prod
 #    OS: windows

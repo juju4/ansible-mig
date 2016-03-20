@@ -3,7 +3,7 @@
 - hosts: all
 #- hosts: test-kitchen
   vars:
-    - mig_user: vagrant
+    - mig_user: mig
 #    - mig_api_port: 1664
     - rabbitmq_cert_source: 'none'
     - rabbitmq_cacert:

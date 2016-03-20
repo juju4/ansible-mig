@@ -41,7 +41,7 @@ setup() {
 }
 
 @test "API url should be accessible internally" {
-    run curl -sSq http://localhost:51664/api/v1/
+    run curl -sSq http://localhost:1664/api/v1/
     [ "$status" -eq 0 ]
     [[ "$output" =~ "\"version\":\"1.0\"" ]]
 }
