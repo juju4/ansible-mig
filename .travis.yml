@@ -18,7 +18,7 @@ before_install:
 ## serverspec test
  - sudo apt-get install -qq ruby2.0 rake
  - sudo gem2.0 install serverspec
- - ln -s /home/travis/build/juju4/ansible-mig/test/integration/default/serverspec/Rakefile
+ - ln -s /home/travis/build/juju4/ansible-mig/test/integration/default/serverspec/Rakefile /home/travis/build/juju4/ansible-mig/
 install:
   - pip install ansible
   - ansible --version
@@ -38,5 +38,6 @@ script:
 #  - "ansible-playbook -i inventory test/integration/default/default.yml --connection=local --sudo | tee /tmp/idempotency.log | grep -q 'changed=0.*failed=0'  && (echo 'Idempotence test: pass' && exit 0)  || (echo 'Idempotence test: fail' && cat /tmp/idempotency.log && exit 1)"
 
 # serverspec
-  - "rake2.0 spec"
+  - pwd
+  - "cd /home/travis/build/juju4/ansible-mig/ && rake2.0 spec"
 
