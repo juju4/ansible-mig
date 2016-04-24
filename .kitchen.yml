@@ -18,8 +18,7 @@ platforms:
 ## test for agent windows/wixl ? no image available
 #  - name: ubuntu-15.10
 ## mig-scheduler issue w rights on database
-## 20160119 disabling centos platform because ansible v2 out and epel still in 1.9.4
-#  - name: centos-7.1
+  - name: centos-7.1
 
 suites:
   - name: default

@@ -111,6 +111,7 @@
 #  environment:
 #    GOPATH: "{{ mig_gopath }}"
 #
+
 - name: Create local database
   postgresql_db: name=mig ## OK
 #  postgresql_db: name=mig template="{{ mig_src }}/database/schema.sql"  ## NOK 'PostgreSQL does not support role with more than 1 dots'

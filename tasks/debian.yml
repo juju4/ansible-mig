@@ -12,8 +12,6 @@
     - nginx
     - supervisor
     - rng-tools
-## check separated role
-    - postgresql-9.3
 ## agent packaging
     - ruby
     - ruby-dev
@@ -22,6 +20,54 @@
 #   - wixl          ## FIXME! only on debian sid/stretch or ubuntu wily (Windows packaging in msi)
 # from source, need multiple dependencies bump and missing libgcab ...
 #   - intltool libglib2.0-dev libavahi-gobject-dev libgsf-1-dev uuid-dev
+
+## Avoid Error: No PostgreSQL clusters exist; see "man pg_createcluster"
+## http://askubuntu.com/questions/646350/locale-warning-from-perl-stops-postgres-configuring
+## https://github.com/ansible/ansible/issues/10698
+#- replace: dest=/etc/ssh/sshd_config regexp='^AcceptEnv LANG LC_*' replace='#AcceptEnv LANG LC_*' backup=yes
+- command: env
+  register: env
+- debug: var=env
+- name: regenerate locale to avoid postgres install bug
+  command: "locale-gen en_US.UTF-8"
+- name: apt | MIG dependencies - postgresql
+  apt: name=postgresql-9.3 state=present
+  environment:
+    LANG: en_US.UTF-8
+    LANGUAGE: en_US.UTF-8
+    LC_ALL: en_US.UTF-8
+    LC_TYPE: en_US.UTF-8
+    LC_ADDRESS: en_US.UTF-8
+    LC_IDENTIFICATION: en_US.UTF-8
+    LC_MEASUREMENT: en_US.UTF-8
+    LC_MESSAGES: en_US.UTF-8
+    LC_MONETARY: en_US.UTF-8
+    LC_NAME: en_US.UTF-8
+    LC_NUMERIC: en_US.UTF-8
+    LC_PAPER: en_US.UTF-8
+    LC_TELEPHONE: en_US.UTF-8
+    LC_TIME: en_US.UTF-8
+  register: pgsqlinstall
+- debug: var=pgsqlinstall
+- name: create postgres base cluster
+  command: "pg_createcluster 9.3 main --start"
+  when: pgsqlinstall is defined and pgsqlinstall.stdout_lines.find('No PostgreSQL clusters exist') != -1
+  become: postgres
+  environment:
+    LANG: en_US.UTF-8
+    LANGUAGE: en_US.UTF-8
+    LC_ALL: en_US.UTF-8
+    LC_TYPE: en_US.UTF-8
+    LC_ADDRESS: en_US.UTF-8
+    LC_IDENTIFICATION: en_US.UTF-8
+    LC_MEASUREMENT: en_US.UTF-8
+    LC_MESSAGES: en_US.UTF-8
+    LC_MONETARY: en_US.UTF-8
+    LC_NAME: en_US.UTF-8
+    LC_NUMERIC: en_US.UTF-8
+    LC_PAPER: en_US.UTF-8
+    LC_TELEPHONE: en_US.UTF-8
+    LC_TIME: en_US.UTF-8
 
 - set_fact:
     nginx_conf: /etc/nginx/sites-available

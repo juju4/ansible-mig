@@ -52,20 +52,25 @@ Finish install by
 ```
 (or https if enabled)
 1) validate w mig-console (need to set ~/.migrc, template provided)
+```
+$ sudo cp -R .gnupg /home/mig/; sudo chown -R mig /home/mig/.gnupg
+$ sudo -u mig -H -s
+$ $HOME/go/src/mig.ninja/mig/bin/linux/amd64/mig-console
+```
 2) run locally mig-agent or deploy it somewhere
 ```
 $GOPATH/src/mig.ninja/mig/bin/linux/amd64/mig-agent-latest
 ```
-if server is withagent enabled
+if server is withagent enabled, mig-agent should already be running
 ```
-$ /sbin/mig-agent
+$ pgrep mig-agent
 ```
 As for any services, you are recommended to do hardening.
 Especially on RabbitMQ part (include erlang epmd)
 
 Some nrpe commands are included to help for monitoring.
 
-Post-install, check your migrc and run mig-console
+Post-install, check your migrc and run mig-console (as mig user)
 ```
 $ cat ~/.migrc
 $ $HOME/go/src/mig.ninja/mig/bin/linux/amd64/mig-console
@@ -141,12 +146,23 @@ $ vagrant up
 $ vagrant ssh
 ```
 
+You can manually execute serverspec inside your VM like this
+```
+$ sudo apt-get install -y ruby2.0 rake
+$ sudo gem2.0 install serverspec
+$ ln -s /tmp/kitchen/roles/mig/test/integration/default/serverspec/Rakefile /tmp/kitchen/roles/mig/
+$ cd /tmp/kitchen/roles/mig && rake2.0 spec
+```
+
 
 Known bugs
 * Ubuntu: the notify 'supervisor restart' fails the first time. not sure
   why. second time run is fine after you do ```sudo service supervisor restart; sudo service nginx restart```
   (failed notified handlers).
 * centos: mig-scheduler fails to run because of postgresql permissions
+* In manual execution mode, ```rake2.0 spec``` fails on rabbitmq-server service if run as standard user.
+works fine if sudo.
+
 
 ## Troubleshooting & Known issues
 

@@ -4,7 +4,7 @@ mig_mode: server
 #mig_mode: client
 
 ### server
-mig_user: "mig"
+mig_user: "_mig"
 #mig_user: "{{ ansible_ssh_user }}"
 ## https://github.com/debops/ansible-libvirtd/commit/6f3916bd3965c62d8f84c87c9283d9ca6d2ada50
 ## http://docs.debops.org/en/latest/ansible/roles/ansible-atd/docs/defaults.html
@@ -17,6 +17,7 @@ mig_user: "mig"
 ## got lookup on host, not on guest...
 #mig_user: "{{ ansible_user | default(lookup('env', 'USER'), True) }}"
 
+## FIXME! https://groups.google.com/forum/#!topic/golang-nuts/MmSbFHLPo8g 1.5.4 or 1.6.1, Apr 13th
 mig_gover: 1.5.2
 mig_gopath: "/home/{{ mig_user }}/go"
 mig_src: "{{ mig_gopath }}/src/mig.ninja/mig"

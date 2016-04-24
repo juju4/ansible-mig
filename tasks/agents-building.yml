@@ -7,6 +7,8 @@
   gem: name=fpm state=present user_install=no
 ## FIXME! travis not getting fpm...
 - command: "which fpm"
+  environment:
+    PATH: "/usr/local/bin:/usr/bin:/bin:/usr/local/sbin:/usr/sbin:/usr/local/go/bin"
   register: whichfpm
   changed_when: false
 - debug: var=whichfpm

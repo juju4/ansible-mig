@@ -15,10 +15,16 @@ before_install:
 ## for local travis execution as we use same default.yml than kitchen
  - mkdir /tmp/kitchen
  - ln -s /home/travis/build/juju4/ansible-mig/test/integration/default/tmp /tmp/kitchen/tmp
+## serverspec test
+ - sudo apt-get install -qq ruby2.0 rake
+ - sudo gem2.0 install serverspec
+ - ln -s /home/travis/build/juju4/ansible-mig/test/integration/default/serverspec/Rakefile
 install:
   - pip install ansible
+  - ansible --version
   - "{ echo '[defaults]'; echo 'roles_path = ../'; } >> ansible.cfg"
   - cat ansible.cfg
+  - gem2.0 --version
 script:
   - "echo localhost > inventory"
 
@@ -29,18 +35,8 @@ script:
   - "ansible-playbook -i inventory --connection=local --sudo -vvvv test/integration/default/default.yml"
 
 ## Run the role/playbook again, checking to make sure it's idempotent. = Known issue
-#  - "ansible-playbook -i inventory test/integration/default/default.yml --connection=local --sudo | tee /tmp/idempotency.log | grep -q 'changed=0.*failed=0'  && (echo 'Idempotence test: pass' && exit 0)  || (echo 'Idempotence test: fail' && exit 1)"
-##  - >
-##  ansible-playbook -i inventory test/integration/default/default.yml --connection=local --sudo
-##  | grep -q 'changed=0.*failed=0'
-##  && (echo 'Idempotence test: pass' && exit 0)
-##  || (echo 'Idempotence test: fail' && exit 1)
-#  - cat /tmp/idempotency.log
+#  - "ansible-playbook -i inventory test/integration/default/default.yml --connection=local --sudo | tee /tmp/idempotency.log | grep -q 'changed=0.*failed=0'  && (echo 'Idempotence test: pass' && exit 0)  || (echo 'Idempotence test: fail' && cat /tmp/idempotency.log && exit 1)"
 
-# Request a page via the web server, to make sure it's running and responds.
-#  - "curl http://localhost/"
-#  - >
-#  ansible-playbook -i inventory test/integration/default/default.yml --connection=local --sudo
-#  | grep -q 'changed=0.*failed=0'
-#  && (echo 'Idempotence test: pass' && exit 0)
-#  || (echo 'Idempotence test: fail' && exit 1)
+# serverspec
+  - "rake2.0 spec"
+

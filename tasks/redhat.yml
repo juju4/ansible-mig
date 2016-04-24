@@ -33,6 +33,9 @@
 - name: initialize postgresql
   command: postgresql-setup initdb
   when: not psqlinit.stat.exists
+## Avoid Error: No PostgreSQL clusters exist; see "man pg_createcluster"
+  environment:
+    LC_ALL: "en_US.UTF-8"
 - file: dest=/root/.ansible_postgresqlinitdb state=touch
   when: not psqlinit.stat.exists
 
