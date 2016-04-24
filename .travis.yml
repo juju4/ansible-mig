@@ -39,5 +39,6 @@ script:
 
 # serverspec
   - pwd
+  - find . -ls
   - "cd /home/travis/build/juju4/ansible-mig/ && rake2.0 spec"
 
