@@ -1,5 +1,12 @@
 ---
 
+- set_fact:
+    mig_url: "http://{{ mig_api_host }}"
+  when: not (mig_nginx_use_ssl is defined and mig_nginx_use_ssl)
+- set_fact:
+    mig_url: "https://{{ mig_api_host }}"
+  when: mig_nginx_use_ssl is defined and mig_nginx_use_ssl
+
 - include: server.yml
   when: mig_mode == 'server'
 

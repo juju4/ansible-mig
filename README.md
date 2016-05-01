@@ -279,6 +279,10 @@ postgres=# \l
            |          |          |             |             | postgres=CTc/postgres
 ```
 
+* Builtin mig-agent config not working?
+Currently necessary to have a /etc/mig/mig-agent.cfg as builtin config is not working
+(even if was updated)
+
 
 ## License
 

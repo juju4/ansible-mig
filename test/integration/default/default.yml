@@ -3,8 +3,10 @@
 - hosts: all
 #- hosts: test-kitchen
   vars:
+    - gpg_generator_user: mig
     - mig_user: mig
 #    - mig_api_port: 1664
+    - mig_enable_auth: false
     - rabbitmq_cert_source: 'none'
     - rabbitmq_cacert:
     - rabbitmq_server_key:
@@ -19,6 +21,8 @@
         - { realname: 'MIG Dupont Investigator', fingerprint: "{{ lookup('file', '/tmp/kitchen/tmp/dupont-fingerprint') }}", pubkeyfile: "/tmp/kitchen/tmp/dupont.asc", pubkey: "{{ lookup('file', '/tmp/kitchen/tmp/dupont.asc') }}", weight: 2 }
         - { realname: 'MIG dupond Investigator', fingerprint: "{{ lookup('file', '/tmp/kitchen/tmp/dupond-fingerprint') }}", pubkeyfile: "/tmp/kitchen/tmp/dupond.asc", pubkey: "{{ lookup('file', '/tmp/kitchen/tmp/dupond.asc') }}", weight: 2 }
   roles:
+## we need mig user existing before to be owner of gpg keys...
+    - { role: adduser, adduser_user_name: "{{ mig_user }}", adduser_public_keys: [ /dev/null ] }
     - { role: gpgkey_generate, gpg_user: dupont, gpg_realname: 'MIG Dupont Investigator', gpg_useremail: 'dupont@localhost', gpg_pubkeyfile: 'dupont.pub', gpg_privkeyfile: 'dupont.priv' }
     - { role: gpgkey_generate, gpg_user: dupond, gpg_realname: 'MIG dupond Investigator', gpg_useremail: 'dupond@localhost', gpg_pubkeyfile: 'dupond.pub', gpg_privkeyfile: 'dupond.priv' }
     - Mayeu.RabbitMQ

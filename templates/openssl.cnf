@@ -42,6 +42,7 @@ localityName_default            = Gator Town
 organizationalUnitName          = Organizational Unit Name (eg, section)
 organizationalUnitName_default  = MIG
 commonName                      = Common Name (eg, YOUR name)
+commonName_default              = {{ mig_api_host }}
 commonName_max                  = 64
 
 [ root_ca ]

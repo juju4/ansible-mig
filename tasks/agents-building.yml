@@ -3,14 +3,22 @@
 #- name: download wixl for windows agent packaging
 #  get_url: url=http://ftp.gnome.org/pub/GNOME/sources/msitools/0.95/msitools-0.95.tar.xz dest=/root/msitools-0.95.tar.xz
 
-- name: install gem fpm for agent packaging
+## Note: might be affected if default system umask is not 022...
+## in some environment, user install seems needed
+- name: install gem fpm for agent packaging - system
   gem: name=fpm state=present user_install=no
+- name: install gem fpm for agent packaging - user
+  gem: name=fpm state=present user_install=yes
+  become: yes
+  become_user: "{{ mig_user }}"
+
 ## FIXME! travis not getting fpm...
 - command: "which fpm"
   environment:
-    PATH: "/usr/local/bin:/usr/bin:/bin:/usr/local/sbin:/usr/sbin:/usr/local/go/bin"
+    PATH: "/usr/local/bin:/usr/bin:/bin:/usr/local/sbin:/usr/sbin:/usr/local/go/bin:$HOME/.gem/ruby/1.9.1/bin"
   register: whichfpm
   changed_when: false
+  ignore_errors: true
 - debug: var=whichfpm
 - command: "env"
   register: env
@@ -25,13 +33,14 @@
   become: yes
   become_user: "{{ mig_user }}"
 - name: update agent configuration - mig-agent.cfg
-#  replace: dest="{{ mig_src }}/conf/mig-agent.cfg" regexp="{{ item.re }}" replace="{{ item.rep }}"
-  replace: dest="{{ mig_src }}/conf/mig-agent.cfg.inc" regexp="{{ item.re }}" replace="{{ item.rep }}"
+  replace: dest="{{ mig_src }}/conf/mig-agent.cfg" regexp="{{ item.re }}" replace="{{ item.rep }}"
+#  replace: dest="{{ mig_src }}/conf/mig-agent.cfg.inc" regexp="{{ item.re }}" replace="{{ item.rep }}"
   with_items:
     - { re: 'api             = ".*"$', rep: 'api             = "http://{{ mig_api_host }}:{{ mig_api_port }}/api/v1/"' }
     - { re: '   ca  = "/path/to/ca/cert"', rep: '   ca  = "/etc/mig/ca.crt"' }
-#    - { re: '   cert= "/path/to/client/cert"', rep: '   cert= "/path/to/client/cert"' }
-#    - { re: '   key = "/path/to/private/key"', rep: '   key = "/path/to/private/key"' }
+    - { re: 'cert= "/path/to/client/cert"', rep: "cert= \"{{ mig_rabbitmq_clientdir }}/agent.crt\"" }
+    - { re: 'key = "/path/to/private/key"', rep: "key = \"{{ mig_rabbitmq_clientdir }}/agent.key\"" }
+    - { re: 'relay            = "amqp://.*"$', rep: "relay            = \"amqp://agent:{{ mig_rabbitmq_agentpass }}@{{ mig_rabbitmq_host }}:{{ mig_rabbitmq_port }}/{{ mig_rabbitmq_vhost }}\"" }
 
 
 - stat: path={{ mig_rabbitmq_clientdir+'/agent.crt' }}
@@ -68,8 +77,10 @@
   ignore_errors: true
 
 - name: fix travis path issue
-  replace: dest="{{ mig_src }}/Makefile" regexp="fpm " replace="/usr/local/bin/fpm "
+  replace: dest="{{ mig_src }}/Makefile" regexp="(\s+)fpm " replace="\1/usr/local/bin/fpm "
 
+- name: check fpm permissions
+  file: dest=/usr/local/bin/fpm state=file mode=0755
 - name: check if already debian mig-agent package
   shell: "ls {{ mig_src }}/mig-agent_*.deb | grep -v latest"
   register: migagentpkg1
@@ -79,7 +90,8 @@
 - name: Build MIG platform agent packages - deb
   command: "make deb-agent chdir={{ mig_src }}"
   environment:
-    PATH: "/usr/local/bin:/usr/bin:/bin:/usr/local/sbin:/usr/sbin:/usr/local/go/bin"
+#    PATH: "/usr/local/bin:/usr/bin:/bin:/usr/local/sbin:/usr/sbin:/usr/local/go/bin"
+    PATH: "/usr/local/bin:/usr/bin:/bin:/usr/local/sbin:/usr/sbin:/usr/local/go/bin:$HOME/.gem/ruby/1.9.1/bin"
     GOPATH: "{{ mig_gopath }}"
     BUILDENV: prod
   become: yes

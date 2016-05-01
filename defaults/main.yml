@@ -17,14 +17,15 @@ mig_user: "_mig"
 ## got lookup on host, not on guest...
 #mig_user: "{{ ansible_user | default(lookup('env', 'USER'), True) }}"
 
-## FIXME! https://groups.google.com/forum/#!topic/golang-nuts/MmSbFHLPo8g 1.5.4 or 1.6.1, Apr 13th
-mig_gover: 1.5.2
+mig_gover: 1.6.2
 mig_gopath: "/home/{{ mig_user }}/go"
 mig_src: "{{ mig_gopath }}/src/mig.ninja/mig"
 mig_api_host: localhost
 #mig_api_port: 51664
 mig_api_port: 1664
 mig_server_withagent: true
+
+mig_enable_auth: true
 
 mig_db_migadmin_pass: xxx
 mig_db_migapi_pass: xxx
@@ -37,6 +38,7 @@ mig_rabbitmq_adminpass: xxx
 mig_rabbitmq_schedpass: xxx
 mig_rabbitmq_agentpass: xxx
 mig_rabbitmq_workrpass: xxx
+## for reference, not really useful for production obviously: http://serverfault.com/questions/235669/how-do-i-make-rabbitmq-listen-only-to-localhost
 
 mig_rabbitmq_certinfo: '/C=US/ST=CA/L=San Francisco/O=MIG Ansible'
 mig_rabbitmq_certduration: 1095

@@ -34,6 +34,7 @@
   register: homemiguser
 #- debug: var=homemiguser
 
+## FIXME! not finding
 - name: Update PATH and GOPATH in bashrc - mig_user
   lineinfile:
     dest: "{{ item.d }}"
@@ -43,7 +44,7 @@
     state: present
     create: False
   with_items:
-    - { d: "{{ mig_home }}/.bashrc", r: "go/bin", l: 'export PATH=$PATH\:/usr/local/go/bin' }
+    - { d: "{{ mig_home }}/.bashrc", r: "go/bin", l: 'export PATH=$PATH\:/usr/local/go/bin\:$HOME/go/bin' }
     - { d: "{{ mig_home }}/.bashrc", r: "GOPATH={{ mig_gopath }}", l: "export GOPATH={{ mig_gopath }}" }
 ## on centos7, missing this for fpm
     - { d: "{{ mig_home }}/.bashrc", r: "/usr/local/bin", l: 'export PATH=$PATH\:/usr/local/bin' }
@@ -69,6 +70,7 @@
   command: "{{ item }}"
   with_items:
     - "go get mig.ninja/mig"
+    - "go get mig.ninja/mig/client/mig-agent-search"
 #    - "go get code.google.com/p/winsvc/eventlog"
 #    - "go get github.com/golang/sys/tree/master/windows/svc/eventlog"   ## NOK/FIXME!
     - "go get github.com/mozilla/masche/cresponse"
@@ -99,6 +101,16 @@
   become: yes
   become_user: "{{ mig_user }}"
   when: not migbin.stat.exists
+- name: Build MIG agent search
+  command: "make mig-agent-search chdir={{ mig_src }}"
+  environment:
+    GOPATH: "{{ mig_gopath }}"
+  become: yes
+  become_user: "{{ mig_user }}"
+
+- file: dest="{{ mig_home }}" mode=0711 state=directory
+- file: "src={{ mig_src }}/bin/linux/amd64/mig-console dest=/usr/local/bin/mig-console state=link"
+- file: "src={{ mig_src }}/bin/linux/amd64/mig dest=/usr/local/bin/mig state=link"
 
 ## either this or default make
 #- name: Build MIG components
@@ -174,6 +186,8 @@
     - { re: 'password = "123456"', rep: 'password = "{{ mig_db_migscheduler_pass }}"' }
     - { re: 'user  = "guest"', rep: 'user  = "scheduler"' }
     - { re: 'pass  = "guest"', rep: 'pass  = "{{ mig_rabbitmq_schedpass }}"' }
+## either be populated, either disable it
+    - { re: '(\s+)whitelist = ', rep: '\1;whitelist = ' }
 #    - { re: '^;   usetls  = true', rep: '   usetls  = true' }
     - { re: '^;   cacert  = "/path/to/cacert.pem"', rep: '   cacert  = "/etc/mig/ca.crt"' }
     - { re: '^;   tlscert = "/path/to/cert.pem"', rep: '   tlscert  = "/etc/mig/scheduler.crt"' }
@@ -217,7 +231,8 @@
   with_items:
     - { s: 'postgres', o: 'password', v: "{{ mig_db_migapi_pass }}" }
     - { s: 'server', o: 'port', v: "{{ mig_api_port }}" }
-    - { s: 'server', o: 'host', v: "http://localhost:{{ mig_api_port }}" }
+    - { s: 'server', o: 'host', v: "{{ mig_url }}:{{ mig_api_port }}" }
+    - { s: 'authentication', o: 'enabled', v: 'off' }
   become: yes
   notify:
     - restart supervisor
@@ -284,12 +299,33 @@
 - name: Manual restart - bug
   service: name="{{ item }}" state=restarted
   with_items:
-    - "{{ supervisor_service }}"
+#    - "{{ supervisor_service }}"
     - nginx
     - rabbitmq-server
   become: yes
   ignore_errors: true
+- name: Manual restart - bug supervisor, sleep 5
+  service: name="{{ supervisor_service }}" state=restarted sleep=5
+  become: yes
+  ignore_errors: true
 
-## must be after investigator key generation
+- name: add investigators inside mig
+#  shell: "curl -v -F 'name={{ realname }}' -F publickey=@{{ pubkeyfile }} {{ mig_url }}/api/v1/investigator/create/"
+#  when: investigator_check.stdout.find({{ realname }}) != -1
+  include: add-investigator.yml realname="{{ item.realname }}" pubkeyfile="{{ item.pubkeyfile }}"
+  with_items:
+    - "{{ mig_client_investigators }}"
+  become: yes
+  become_user: "{{ mig_user }}"
+
+- name: enable authentication for api
+  ini_file: dest=/etc/mig/api.cfg section="{{ item.s }}" option="{{ item.o }}" value="{{ item.v }}" mode=0600 owner="{{ mig_user }}" backup=yes
+  with_items:
+    - { s: 'authentication', o: 'enabled', v: 'on' }
+  become: yes
+  notify:
+    - restart supervisor
+  when: mig_enable_auth is defined and mig_enable_auth and investigatoradded is defined and investigatoradded.rc == 0
+
 - include: agents-building.yml
 

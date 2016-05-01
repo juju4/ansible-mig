@@ -47,6 +47,17 @@
 #  ignore_errors: true
 ## FIXME! missing services/supervisor config
 
+## FIXME! builtin config seems incorrect
+- stat: path={{ mig_src }}/conf/mig-agent.cfg
+  register: macfg
+- debug: var=macfg
+- name: setting separate mig-agent config file
+  copy: 
+    src: "{{ mig_src }}/conf/mig-agent.cfg"
+    dest: /etc/mig/mig-agent.cfg
+    mode: '0600'
+    remote_src: true
+
 - name: set supervisor config to manage MIG client
   template: src=supervisord-migagent.ini dest={{ supervisor_confdir }}/migagent.{{ supervisor_ext }} mode=0644
   notify:

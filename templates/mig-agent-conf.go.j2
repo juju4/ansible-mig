@@ -51,7 +51,7 @@ var LOGGINGCONF = mig.Logging{
 var AMQPBROKER string = "amqp://agent:{{ mig_rabbitmq_agentpass }}@{{ mig_rabbitmq_host }}:{{ mig_rabbitmq_port }}/{{ mig_rabbitmq_vhost }}"
 
 // location of the MIG API, used for discovering the public IP
-var APIURL string = "http://{{ mig_api_host }}:{{ mig_api_port }}/api/v1/"
+var APIURL string = "{{ mig_url }}:{{ mig_api_port }}/api/v1/"
 
 // if the connection still fails after looking for a HTTP_PROXY, try to use the
 // proxies listed below

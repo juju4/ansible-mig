@@ -23,6 +23,7 @@
     - ruby
     - ruby-devel
     - rpm-build
+    - curl
 ## for wixl, but versions too low on centos7.1 and still missing libgcab
 #    - intltool
 #    - glib2-devel
