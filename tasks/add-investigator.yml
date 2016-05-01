@@ -6,5 +6,5 @@
   shell: "curl -q -F \'name={{ realname }}\' -F publickey=@{{ pubkeyfile }} {{ mig_url }}/api/v1/investigator/create/"
 #  when: investigators_check.stdout.find("{{ realname }}") == -1
   register: investigatoradded
-  ignorer_errors: true
+  ignore_errors: true
 - debug: var=investigatoradded
