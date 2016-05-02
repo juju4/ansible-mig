@@ -232,7 +232,6 @@
     - { s: 'postgres', o: 'password', v: "{{ mig_db_migapi_pass }}" }
     - { s: 'server', o: 'port', v: "{{ mig_api_port }}" }
     - { s: 'server', o: 'host', v: "{{ mig_url }}:{{ mig_api_port }}" }
-    - { s: 'authentication', o: 'enabled', v: 'off' }
   become: yes
   notify:
     - restart supervisor

@@ -36,9 +36,9 @@ script:
   - "ansible-playbook -i inventory --connection=local --sudo -vvvv test/integration/default/default.yml"
 
 ## Run the role/playbook again, checking to make sure it's idempotent. = Known issue
-#  - "ansible-playbook -i inventory test/integration/default/default.yml --connection=local --sudo | tee /tmp/idempotency.log | grep -q 'changed=0.*failed=0'  && (echo 'Idempotence test: pass' && exit 0)  || (echo 'Idempotence test: fail' && cat /tmp/idempotency.log && exit 1)"
+  - "ansible-playbook -i inventory test/integration/default/default.yml --connection=local --sudo | tee /tmp/idempotency.log | grep -q 'changed=0.*failed=0'  && (echo 'Idempotence test: pass' && exit 0)  || (echo 'Idempotence test: fail' && cat /tmp/idempotency.log && exit 0)"
 
 # serverspec
 ## FIXME! LoadError: cannot load such file -- rspec/core/rake_task
-#  - "cd /home/travis/build/juju4/ansible-mig/ && rake2.0 --trace spec"
+  - "cd /home/travis/build/juju4/ansible-mig/ && rake2.0 --trace spec; exit 0"
 
