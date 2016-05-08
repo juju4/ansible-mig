@@ -38,8 +38,8 @@
   with_items:
     - { re: 'api             = ".*"$', rep: 'api             = "http://{{ mig_api_host }}:{{ mig_api_port }}/api/v1/"' }
     - { re: '   ca  = "/path/to/ca/cert"', rep: '   ca  = "/etc/mig/ca.crt"' }
-    - { re: 'cert= "/path/to/client/cert"', rep: "cert= \"{{ mig_rabbitmq_clientdir }}/agent.crt\"" }
-    - { re: 'key = "/path/to/private/key"', rep: "key = \"{{ mig_rabbitmq_clientdir }}/agent.key\"" }
+    - { re: 'cert= "/path/to/client/cert"', rep: "cert= \"/etc/mig/agent.crt\"" }
+    - { re: 'key = "/path/to/private/key"', rep: "key = \"/etc/mig/agent.key\"" }
     - { re: 'relay            = "amqp://.*"$', rep: "relay            = \"amqp://agent:{{ mig_rabbitmq_agentpass }}@{{ mig_rabbitmq_host }}:{{ mig_rabbitmq_port }}/{{ mig_rabbitmq_vhost }}\"" }
 
 

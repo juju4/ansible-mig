@@ -64,6 +64,8 @@
 #  become_user: "{{ mig_user }}"
 #  when: not migrepo.stat.exists
 
+- stat: path="{{ mig_src }}"
+  register: godir
 ## FIXME! not idempotent
 ## No Golang modules for ansible currently
 - name: Get mig repository through 'go get'
@@ -89,6 +91,7 @@
   become_user: "{{ mig_user }}"
   environment:
     GOPATH: "{{ mig_gopath }}"
+  when: not godir.stat.exists
 
 - stat: path="{{ mig_src }}/bin/linux/amd64/mig-scheduler"
   register: migbin
@@ -295,22 +298,17 @@
 - name: Ensure nginx is enabled and started
   service: name=nginx state=started enabled=yes
   become: yes
-- name: Manual restart - bug
+- name: Manual restart before investigator creation
   service: name="{{ item }}" state=restarted
   with_items:
-#    - "{{ supervisor_service }}"
     - nginx
     - rabbitmq-server
   become: yes
-  ignore_errors: true
-- name: Manual restart - bug supervisor, sleep 5
+- name: Manual restart - sleep 5
   service: name="{{ supervisor_service }}" state=restarted sleep=5
   become: yes
-  ignore_errors: true
 
 - name: add investigators inside mig
-#  shell: "curl -v -F 'name={{ realname }}' -F publickey=@{{ pubkeyfile }} {{ mig_url }}/api/v1/investigator/create/"
-#  when: investigator_check.stdout.find({{ realname }}) != -1
   include: add-investigator.yml realname="{{ item.realname }}" pubkeyfile="{{ item.pubkeyfile }}"
   with_items:
     - "{{ mig_client_investigators }}"
@@ -325,6 +323,13 @@
   notify:
     - restart supervisor
   when: mig_enable_auth is defined and mig_enable_auth and investigatoradded is defined and investigatoradded.rc == 0
+
+- file: dest=/etc/mig mode=0755 state=directory
+- name: check config permissions
+  file: "dest={{ item }} state=file mode=0444 owner={{ mig_user }}"
+  with_items:
+    - /etc/mig/api.cfg
+    - /etc/mig/scheduler.cfg
 
 - include: agents-building.yml
 

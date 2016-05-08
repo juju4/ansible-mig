@@ -1,5 +1,14 @@
 ---
 
+- stat: path={{ pubkeyfile }}
+  register: localkey
+- name: recover pubkeyfile if not local
+  copy: "src={{ pubkeyfile }} dest=/tmp/{{ pubkeyfile | basename }} mode=0400"
+  when: not localkey.stat.exists
+- set_fact:
+    pubkeyfile: /tmp/{{ pubkeyfile | basename }}
+  when: not localkey.stat.exists
+
 ## /investigator is not returning a list, need to browse per investigatorid
 ## but api knows not to recreate same user :)
 - name: create investigator {{ realname }} with api

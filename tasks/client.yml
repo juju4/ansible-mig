@@ -1,6 +1,7 @@
 ---
 
-- set_fact:
+- name: decide mig_arch
+  set_fact:
     mig_arch: amd64
   when: ansible_architecture == 'x86_64'
 - set_fact:
@@ -10,20 +11,32 @@
     mig_sys: windows
   when: ansible_system == 'Windows'
 
-- set_fact:
+- name: decide mig_agent_bin
+  set_fact:
     mig_agent_bin: "{{ mig_src }}/{{ mig_sys }}/{{ mig_arch }}/mig-agent-latest"
   when: ansible_system != 'Windows'
 - set_fact:
     mig_agent_bin: "{{ mig_src }}/{{ mig_sys }}/{{ mig_arch }}/mig-agent-latest.exe"
   when: ansible_system == 'Windows'
 
-- set_fact:
+- name: decide mig_agent_pkg
+  set_fact:
     mig_agent_pkg: "{{ mig_src }}/mig-agent_latest-{{ ansible_architecture }}.deb"
-  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and mig_api_host == 'localhost'
+  when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
 - set_fact:
     mig_agent_pkg: "{{ mig_src }}/mig-agent-latest-{{ ansible_architecture }}.rpm"
-  when: (ansible_os_family == "RedHat" or ansible_distribution == 'CentOS' or ansible_distribution == 'Red Hat Enterprise Linux') and mig_api_host == 'localhost'
+  when: (ansible_os_family == "RedHat" or ansible_distribution == 'CentOS' or ansible_distribution == 'Red Hat Enterprise Linux')
 
+- name: retrieve mig-agent archive if remote on orchestrator
+  fetch: src="{{ mig_agent_pkg }}" dest=tmp/ flat=yes
+  delegate_to: "{{ mig_servername }}"
+  when: mig_api_host != 'localhost'
+- name: push mig-agent on host
+  copy: "src=tmp/{{ mig_agent_pkg | basename }} dest=/root/{{ mig_agent_pkg | basename }} mode=644"
+  when: mig_api_host != 'localhost'
+- set_fact:
+    mig_agent_pkg: "/root/{{ mig_agent_pkg | basename }}"
+  when: mig_api_host != 'localhost'
 
 ## FIXME! handle package update? latest not supported for pkg file
 - name: apt | mig-agent install

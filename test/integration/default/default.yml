@@ -3,8 +3,8 @@
 - hosts: all
 #- hosts: test-kitchen
   vars:
-    - gpg_generator_user: mig
-    - mig_user: mig
+#    - mig_user: mig
+    - gpg_generator_user: "{{ mig_user }}"
 #    - mig_api_port: 1664
     - mig_enable_auth: false
     - rabbitmq_cert_source: 'none'

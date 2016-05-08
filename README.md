@@ -282,6 +282,8 @@ postgres=# \l
 * Builtin mig-agent config not working?
 Currently necessary to have a /etc/mig/mig-agent.cfg as builtin config is not working
 (even if was updated)
+* migapi_spec.rb investigator queries might fail sometimes as investigator order does 
+not seem deterministic
 
 
 ## License

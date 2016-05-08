@@ -12,7 +12,7 @@
   template: src=openssl.cnf dest={{ mig_home }}/rabbitmq-openssl.cnf mode=0600 owner={{ mig_user }}
 
 - name: Ensure appropriate permissions and owner
-  file: dest="{{ item }}" state=directory mode=0700 owner="{{ mig_user }}"
+  file: dest="{{ item }}" state=directory mode=0711 owner="{{ mig_user }}"
   with_items:
     - "{{ mig_rabbitmq_cadir }}"
     - "{{ mig_rabbitmq_cadir }}/certs"
@@ -65,7 +65,7 @@
   when: not agentcrt.stat.exists
 
 ## FIXME! certificate file contains fingerprint and info too...
-- file: dest=/etc/rabbitmq mode=0755 state=directory
+- file: dest=/etc/rabbitmq mode=0711 state=directory
 - name: synchronize rabbitmq server certificates to rabbitmq config directory
   command: "rsync -ci {{ item }} /etc/rabbitmq/"
   register: rsync_result
@@ -78,7 +78,6 @@
     - "{{ mig_rabbitmq_serverkey }}"
     - "{{ mig_rabbitmq_servercrt }}"
 
-- file: dest=/etc/mig mode=0755 state=directory
 - name: synchronize rabbitmq client certificates to mig config directory
 ## FIXME! use synchronize module too?
   command: "rsync -ci {{ item }} /etc/mig/"
@@ -88,5 +87,7 @@
     - "{{ mig_rabbitmq_cacertcrt }}"
     - "{{ mig_rabbitmq_clientdir }}/scheduler.key"
     - "{{ mig_rabbitmq_clientdir }}/scheduler.crt"
+    - "{{ mig_rabbitmq_clientdir }}/agent.key"
+    - "{{ mig_rabbitmq_clientdir }}/agent.crt"
 
 
