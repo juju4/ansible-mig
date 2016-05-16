@@ -17,8 +17,10 @@ before_install:
  - mkdir /tmp/kitchen
  - ln -s /home/travis/build/juju4/ansible-mig/test/integration/default/tmp /tmp/kitchen/tmp
 ## serverspec test
- - sudo apt-get install -qq ruby2.0 rake
- - sudo gem2.0 install serverspec rspec
+# - sudo apt-get install -qq ruby2.0 rake
+# - sudo gem2.0 install serverspec rspec
+ - rvm use --install 2.2.3
+ - find /usr/*bin /usr/local/*sbin -iname 'rake*' -ls
  - ln -s /home/travis/build/juju4/ansible-mig/test/integration/default/serverspec/Rakefile /home/travis/build/juju4/ansible-mig/
 install:
   - pip install ansible
@@ -40,5 +42,5 @@ script:
 
 # serverspec
 ## FIXME! LoadError: cannot load such file -- rspec/core/rake_task
-  - "cd /home/travis/build/juju4/ansible-mig/ && rake2.0 --trace spec; exit 0"
+  - "cd /home/travis/build/juju4/ansible-mig/ && rake2.2 --trace spec; exit 0"
 
