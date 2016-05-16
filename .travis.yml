@@ -42,5 +42,5 @@ script:
 
 # serverspec
 ## FIXME! LoadError: cannot load such file -- rspec/core/rake_task
-  - "cd /home/travis/build/juju4/ansible-mig/ && rake2.2 --trace spec; exit 0"
+  - "cd /home/travis/build/juju4/ansible-mig/ && rake2.0 --trace spec; exit 0"
 
