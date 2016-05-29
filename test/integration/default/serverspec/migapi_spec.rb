@@ -19,16 +19,17 @@ end
 describe command('curl http://127.0.0.1/api/v1/dashboard') do
   its(:stdout) { should match /"version":"1.0"/ }
 end
+## Note: non-deterministic order creation...
 describe command('curl http://127.0.0.1/api/v1/investigator?investigatorid=1') do
-#  its(:stdout) { should match /scheduler/ }
-  its(:stdout) { should match /Dupont/ }
+  its(:stdout) { should match /scheduler/ }
+#  its(:stdout) { should match /Dupont/ }
 end
 describe command('curl http://127.0.0.1/api/v1/investigator?investigatorid=2') do
-#  its(:stdout) { should match /Dupont/ }
-  its(:stdout) { should match /dupond/ }
+  its(:stdout) { should match /Dupont/ }
+#  its(:stdout) { should match /dupond/ }
 end
 describe command('curl http://127.0.0.1/api/v1/investigator?investigatorid=3') do
-#  its(:stdout) { should match /dupond/ }
-  its(:stdout) { should match /scheduler/ }
+  its(:stdout) { should match /dupond/ }
+#  its(:stdout) { should match /scheduler/ }
 end
 

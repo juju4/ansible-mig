@@ -53,7 +53,7 @@
 
 - stat: path="{{ mig_rabbitmq_clientdir }}/agent.crt"
   register: agentcrt
-- debug: var="openssl ca -extensions server_cert -in {{ mig_rabbitmq_clientdir }}/agent.csr -out {{ mig_rabbitmq_clientdir }}/agent.crt -config {{ mig_home }}/rabbitmq-openssl.cnf"
+- debug: msg="openssl ca -extensions server_cert -in {{ mig_rabbitmq_clientdir }}/agent.csr -out {{ mig_rabbitmq_clientdir }}/agent.crt -config {{ mig_home }}/rabbitmq-openssl.cnf"
 - name: Sign certificates for scheduler, workers and agents
   shell: "yes | openssl ca -extensions server_cert -in {{ mig_rabbitmq_clientdir }}/{{ item }}.csr -out {{ mig_rabbitmq_clientdir }}/{{ item }}.crt -config {{ mig_home }}/rabbitmq-openssl.cnf"
   with_items:

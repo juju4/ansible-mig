@@ -15,9 +15,9 @@ provisioner:
 platforms:
 ## OK
   - name: ubuntu-14.04
+  - name: ubuntu-16.04
 ## test for agent windows/wixl ? no image available
-#  - name: ubuntu-15.10
-## mig-scheduler issue w rights on database
+## centos: mig-scheduler issue w rights on database
   - name: centos-7.1
 
 suites:

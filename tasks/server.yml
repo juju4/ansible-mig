@@ -172,7 +172,7 @@
 
 
 - name: Ensure mig configuration dir exists
-  file: dest=/etc/mig state=directory mode=0755
+  file: "dest=/etc/mig state=directory mode=0750 owner=root group={{ mig_user }}"
   become: yes
 
 - stat: path="/etc/mig/scheduler.cfg"
@@ -324,9 +324,8 @@
     - restart supervisor
   when: mig_enable_auth is defined and mig_enable_auth and investigatoradded is defined and investigatoradded.rc == 0
 
-- file: dest=/etc/mig mode=0755 state=directory
 - name: check config permissions
-  file: "dest={{ item }} state=file mode=0444 owner={{ mig_user }}"
+  file: "dest={{ item }} state=file mode=0440 owner={{ mig_user }} group=root"
   with_items:
     - /etc/mig/api.cfg
     - /etc/mig/scheduler.cfg
