@@ -78,7 +78,7 @@ $ $HOME/go/src/mig.ninja/mig/bin/linux/amd64/mig-console
 
 ## Variables
 
-There is a good number of variables to set the different settings of MIG.
+There is a good number of variables to set the different settings of MIG. Both API and RabbitMQ hosts should be accessible to clients.
 Some like password should be stored in ansible vault for production systems at least.
 
 ```
@@ -284,6 +284,31 @@ Currently necessary to have a /etc/mig/mig-agent.cfg as builtin config is not wo
 (even if was updated)
 * migapi_spec.rb investigator queries might fail sometimes as investigator order does 
 not seem deterministic
+
+* Troubleshoot API request.
+Check nginx log (/var/log/nginx/*.log), mig-api (/var/log/supervisor/mig-api.log)
+
+* mig-agent-search failing to generate security token
+```
+$ mig-agent-search -c ~/.migrc "name like '%%'"
+panic: failed to generate a security token using key xxx from /home/_mig/.gnupg/secring.gpg
+```
+Ensure fingerprint inside .migrc is consistent with your secret keys
+```
+$ gpg --fingerprint EMAIL | awk -F= '/Key fingerprint/ { gsub(/ /,"", $2); print $2 }'
+```
+
+* mig agent not starting correctly
+```
+# supervisorctl status
+mig-agent                        FATAL      Exited too quickly (process log may have details)
+```
+start mig-agent in debug mode and check /etc/mig/mig-agent.cfg
+```
+# mig-agent -d
+```
+Ensure both API and RabbitMQ host are accessible to client.
+If you are using this role with its dependencies, ensure variables for both are set and consistent (mig-agent.cfg and /etc/rabbitmq/rabbitmq.config).
 
 
 ## License

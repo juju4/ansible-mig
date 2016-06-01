@@ -184,17 +184,27 @@
   when: not schedulercfg.stat.exists
 
 - name: update scheduler configuration
-  replace: dest="/etc/mig/scheduler.cfg" regexp="{{ item.re }}" replace="{{ item.rep }}"
+#  replace: dest="/etc/mig/scheduler.cfg" regexp="{{ item.re }}" replace="{{ item.rep }}"
+#  with_items:
+#    - { re: 'password = "123456"', rep: 'password = "{{ mig_db_migscheduler_pass }}"' }
+#    - { re: 'user  = "guest"', rep: 'user  = "scheduler"' }
+#    - { re: 'pass  = "guest"', rep: 'pass  = "{{ mig_rabbitmq_schedpass }}"' }
+### either be populated, either disable it
+#    - { re: '(\s+)whitelist = ', rep: '\1;whitelist = ' }
+##    - { re: '^;   usetls  = true', rep: '   usetls  = true' }
+#    - { re: '^;   cacert  = "/path/to/cacert.pem"', rep: '   cacert  = "/etc/mig/ca.crt"' }
+#    - { re: '^;   tlscert = "/path/to/cert.pem"', rep: '   tlscert  = "/etc/mig/scheduler.crt"' }
+#    - { re: '^;   tlskey  = "/path/to/key.pem"', rep: '   tlskey  = "/etc/mig/scheduler.key"' }
+  ini_file: dest=/etc/mig/scheduler.cfg section="{{ item.s }}" option="{{ item.o }}" value="{{ item.v }}" state="{{ item.st }}" mode=0440 owner="{{ mig_user }}" backup=yes
   with_items:
-    - { re: 'password = "123456"', rep: 'password = "{{ mig_db_migscheduler_pass }}"' }
-    - { re: 'user  = "guest"', rep: 'user  = "scheduler"' }
-    - { re: 'pass  = "guest"', rep: 'pass  = "{{ mig_rabbitmq_schedpass }}"' }
-## either be populated, either disable it
-    - { re: '(\s+)whitelist = ', rep: '\1;whitelist = ' }
-#    - { re: '^;   usetls  = true', rep: '   usetls  = true' }
-    - { re: '^;   cacert  = "/path/to/cacert.pem"', rep: '   cacert  = "/etc/mig/ca.crt"' }
-    - { re: '^;   tlscert = "/path/to/cert.pem"', rep: '   tlscert  = "/etc/mig/scheduler.crt"' }
-    - { re: '^;   tlskey  = "/path/to/key.pem"', rep: '   tlskey  = "/etc/mig/scheduler.key"' }
+    - { s: 'agent', o: 'whitelist', v: '', st: absent }
+    - { s: 'postgres', o: 'password', v: "{{ mig_db_migapi_pass }}", st: present }
+    - { s: 'mq', o: 'host', v: "{{ mig_rabbitmq_host }}", st: present }
+    - { s: 'mq', o: 'user', v: 'scheduler', st: present }
+    - { s: 'mq', o: 'pass', v: "{{ mig_rabbitmq_schedpass }}", st: present }
+    - { s: 'mq', o: 'cacert', v: "/etc/mig/ca.crt", st: present }
+    - { s: 'mq', o: 'tlscert', v: '/etc/mig/scheduler.crt', st: present }
+    - { s: 'mq', o: 'tlskey', v: '/etc/mig/scheduler.key', st: present }
   become: yes
   notify:
     - restart supervisor
@@ -292,6 +302,7 @@
   become_user: "{{ mig_user }}"
   when: migrc_user_fingerprint is defined and migrc_user_fingerprint != ""
 
+- include: nginx-robots.yml
 - name: Ensure supervisor is enabled and started
   service: name="{{ supervisor_service }}" state=started enabled=yes
   become: yes
@@ -331,4 +342,8 @@
     - /etc/mig/scheduler.cfg
 
 - include: agents-building.yml
+
+- name: Ensure mig configuration dir exists
+  file: "dest=/etc/mig state=directory mode=0750 owner=root group={{ mig_user }}"
+  become: yes
 
