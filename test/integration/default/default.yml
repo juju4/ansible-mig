@@ -25,6 +25,12 @@
     - { role: adduser, adduser_user_name: "{{ mig_user }}", adduser_public_keys: [ /dev/null ] }
     - { role: gpgkey_generate, gpg_user: dupont, gpg_realname: 'MIG Dupont Investigator', gpg_useremail: 'dupont@localhost', gpg_pubkeyfile: 'dupont.pub', gpg_privkeyfile: 'dupont.priv' }
     - { role: gpgkey_generate, gpg_user: dupond, gpg_realname: 'MIG dupond Investigator', gpg_useremail: 'dupond@localhost', gpg_pubkeyfile: 'dupond.pub', gpg_privkeyfile: 'dupond.priv' }
+#    - mig
+## for a single server setup
     - Mayeu.RabbitMQ
-    - mig
+    - mig-postgres
+    - mig-rabbitmq
+    - mig-api
+    - mig-scheduler
+    - mig-agentsbuild
 

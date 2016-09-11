@@ -4,6 +4,11 @@ mig_mode: server
 #mig_mode: client
 
 ### server
+mig_server_roles: 'all'
+#mig_server_roles: 'api'
+#mig_server_roles: 'scheduler'
+#mig_server_roles: 'postgres'
+#mig_server_roles: 'rabbitmq'
 mig_user: "_mig"
 #mig_user: "{{ ansible_ssh_user }}"
 ## https://github.com/debops/ansible-libvirtd/commit/6f3916bd3965c62d8f84c87c9283d9ca6d2ada50
@@ -27,6 +32,8 @@ mig_server_withagent: true
 
 mig_enable_auth: true
 
+#mig_db_host: localhost
+#mig_db_port: 
 mig_db_migadmin_pass: xxx
 mig_db_migapi_pass: xxx
 mig_db_migscheduler_pass: xxx

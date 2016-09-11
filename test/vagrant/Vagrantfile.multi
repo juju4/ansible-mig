@@ -1,0 +1,71 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+## require vagrant plugin: vagrant-serverspec
+
+VAGRANTFILE_API_VERSION = "2"
+ENV['VAGRANT_DEFAULT_PROVIDER'] = 'virtualbox'
+
+Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
+    #config.vm.box = "ubuntu/xenial64"
+    config.vm.box = "boxcutter/ubuntu1604"
+    #config.vm.box = "ubuntu/trusty64"
+    #config.vm.box = "centos/7"
+
+    config.vm.provision :ansible do |ansible|
+       ansible.playbook = "site-mig.yml"
+       #ansible.verbose = "vvvv"
+       #ansible.host_key_checking = false
+       #ansible.limit = 'all'
+       ansible.sudo = true
+       ansible.extra_vars = { ansible_ssh_user: 'vagrant' }
+       ansible.groups = {
+          "migrabbit" => ["vrabbit" ],
+          "migpostgres" => ["vpostgres" ],
+          "migapi" => ["vapi" ],
+          "migscheduler" => ["vsched" ],
+          "migagents" => ["vbuild" ],
+          "migclient2" => ["vclient", "vclient2" ],
+       }
+    end
+
+    config.vm.define "vrabbit" do |vrabbit|
+        vrabbit.vm.hostname = "vrabbit"
+        vrabbit.vm.network "private_network", ip: "192.168.101.51"
+    end
+    config.vm.define "vpostgres" do |vpostgres|
+        vpostgres.vm.hostname = "vpostgres"
+        vpostgres.vm.network "private_network", ip: "192.168.101.52"
+    end
+    config.vm.define "vapi" do |vapi|
+        vapi.vm.hostname = "vapi"
+        vapi.vm.network "private_network", ip: "192.168.101.60"
+### FIXME!/TODO executed on host, not on guest...
+#        vapi.vm.provision :serverspec do |spec|
+#            spec.pattern = '../../../mig-api/test/integration/default/serverspec/*_spec.rb'
+#        end
+    end
+    config.vm.define "vsched" do |vsched|
+        vsched.vm.hostname = "vsched"
+        vsched.vm.network "private_network", ip: "192.168.101.61"
+    end
+    config.vm.define "vbuild" do |vbuild|
+        vbuild.vm.hostname = "vbuild"
+        vbuild.vm.network "private_network", ip: "192.168.101.90"
+    end
+    config.vm.define "vclient" do |vclient|
+        vclient.vm.hostname = "vclient"
+        vclient.vm.network "private_network", ip: "192.168.101.101"
+    end
+## FIXME! not working as normal
+#    config.vm.define "vclient2" do |vclient2|
+#        #vclient2.vm.box = "bento/centos-7.1"
+#        vclient2.vm.box = "centos/7"
+### not sure why we need this line
+##        vclient2.vm.ssh.password = "vagrant"
+#        vclient2.ssh.insert_key = false
+#        vclient2.vm.hostname = "vclient2"
+#        vclient2.vm.network "private_network", ip: "192.168.101.102"
+#    end
+
+end
+

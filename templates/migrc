@@ -1,7 +1,0 @@
-[api]
-        url = "{{ mig_url }}/api/v1/"
-
-[gpg]
-        home = "{{ mig_home }}/.gnupg/"
-        keyid = "{{ migrc_user_fingerprint }}"
-

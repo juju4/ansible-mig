@@ -3,7 +3,7 @@ galaxy_info:
   author: juju4
   description: Mozilla Investi Gator
   license: BSD
-  min_ansible_version: 1.9
+  min_ansible_version: 2.0
   #
   # Below are all platforms currently available. Just uncomment
   # the ones that apply to your role. If you don't see your
@@ -15,6 +15,7 @@ galaxy_info:
      - 7
   - name: Ubuntu
     versions:
+    - xenial
     - trusty
   - name: Debian
     versions:
@@ -32,6 +33,11 @@ dependencies:
   # dependencies available via galaxy should be listed here.
   # Be sure to remove the '[]' above if you add dependencies
   # to this list.
-## Necessary for server mode, but not client
-#  - Mayeu.RabbitMQ
-
+  - redhat-epel
+## for a single server setup
+  - Mayeu.RabbitMQ
+  - mig-postgres
+  - mig-rabbitmq
+  - mig-api
+  - mig-agentsbuild
+  - mig-scheduler

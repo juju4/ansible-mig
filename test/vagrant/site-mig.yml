@@ -1,6 +1,23 @@
 ---
 
+## unique server configuration
 - hosts: migserver
+  vars:
+    - rabbitmq_cacert:
+    - rabbitmq_server_key:
+    - rabbitmq_server_cert:
+    - rabbitmq_ssl: true
+    - rabbitmq_cert_source: 'none'
+    - rabbitmq_conf_ssl_options_cacertfile: "/etc/rabbitmq/ca.crt"
+    - rabbitmq_conf_ssl_options_certfile: "/etc/rabbitmq/server-{{ ansible_hostname }}.crt"
+    - rabbitmq_conf_ssl_options_keyfile: "/etc/rabbitmq/server-{{ ansible_hostname }}.key"
+    - rabbitmq_conf_tcp_listeners_address: 127.0.0.1
+#    - rabbitmq_conf_tcp_listeners_address: 0.0.0.0
+    - rabbitmq_conf_ssl_listeners_address: 0.0.0.0
+    - mig_client_investigators:
+        - { realname: 'MIG Dupont Investigator', fingerprint: "{{ lookup('file', 'tmp/dupont-fingerprint') }}", pubkeyfile: "tmp/dupont.asc", pubkey: "{{ lookup('file', 'tmp/dupont.asc') }}", weight: 2 }
+        - { realname: 'MIG dupond Investigator', fingerprint: "{{ lookup('file', 'tmp/dupond-fingerprint') }}", pubkeyfile: "tmp/dupond.asc", pubkey: "{{ lookup('file', 'tmp/dupond.asc') }}", weight: 2 }
+
   roles:
     - { role: gpgkey_generate, gpg_user: dupont, gpg_realname: 'MIG Dupont Investigator', gpg_useremail: 'dupont@localhost', gpg_pubkeyfile: 'dupont.pub', gpg_privkeyfile: 'dupont.priv' }
     - { role: gpgkey_generate, gpg_user: dupond, gpg_realname: 'MIG dupond Investigator', gpg_useremail: 'dupond@localhost', gpg_pubkeyfile: 'dupond.pub', gpg_privkeyfile: 'dupond.priv' }
@@ -9,4 +26,96 @@
 
 - hosts: migclient
   roles:
-    - { role: mig, mig_mode: client, mig_api_host: ansiblemigservername }
+    - { role: migclient, mig_api_host: ansiblemigservername }
+
+
+## multi-tiers servers configuration
+## Reminder: rabbitmq: port 5671 with ssl, 5672 without
+## Note for ssl: need to review for each hosts, value of mig_rabbitmq_port, mig_rabbitmq_ssl, mig_rabbitmq_cert_san, rabbitmq_conf_tcp_listeners_address, mig_nginx_use_ssl.
+##      mig refused self-signed certificate so need a valid domain (rabbitmq + nginx). plenty of letsencrypt ansible roles available
+- hosts: migrabbit
+  vars:
+    - mig_rabbitmq_host: 192.168.101.51
+#    - mig_rabbitmq_port: 5672
+    - mig_rabbitmq_port: 5671   ## using ssl
+    - rabbitmq_cacert:
+    - rabbitmq_server_key:
+    - rabbitmq_server_cert:
+    - rabbitmq_ssl: true
+    - mig_rabbitmq_ssl: true
+    - mig_rabbitmq_cert_san:
+        - "IP.1 = {{ mig_rabbitmq_host }}"
+    - rabbitmq_cert_source: 'none'
+    - rabbitmq_conf_ssl_options_cacertfile: "/etc/rabbitmq/ca.crt"
+    - rabbitmq_conf_ssl_options_certfile: "/etc/rabbitmq/server-{{ ansible_hostname }}.crt"
+    - rabbitmq_conf_ssl_options_keyfile: "/etc/rabbitmq/server-{{ ansible_hostname }}.key"
+    - rabbitmq_conf_tcp_listeners_address: 127.0.0.1
+#    - rabbitmq_conf_tcp_listeners_address: 0.0.0.0
+    - rabbitmq_conf_ssl_listeners_address: 0.0.0.0
+    - mig_rabbitmq_pull: true
+  roles:
+    - Mayeu.RabbitMQ
+    - mig-rabbitmq
+
+- hosts: migpostgres
+  vars:
+    - mig_db_host: 192.168.101.52
+    - mig_db_listen: "{{ mig_db_host }}"
+    - mig_db_subnet_access: '192.168.101.0/24'
+  roles:
+    - mig-postgres
+
+- hosts: migapi
+  vars:
+    - mig_api_host: 192.168.101.60
+    - mig_api_port: 1664
+    - mig_db_host: 192.168.101.52
+    - mig_url: "http://{{ mig_api_host }}:{{ mig_api_port }}"
+    - mig_nginx_use_ssl: false
+    - gpg_generator_user: _mig
+    - mig_client_investigators:
+        - { realname: 'MIG Dupont Investigator', fingerprint: "{{ lookup('file', 'tmp/dupont-fingerprint') }}", pubkeyfile: "tmp/dupont.asc", pubkey: "{{ lookup('file', 'tmp/dupont.asc') }}", weight: 2 }
+        - { realname: 'MIG dupond Investigator', fingerprint: "{{ lookup('file', 'tmp/dupond-fingerprint') }}", pubkeyfile: "tmp/dupond.asc", pubkey: "{{ lookup('file', 'tmp/dupond.asc') }}", weight: 2 }
+  roles:
+    - { role: gpgkey_generate, gpg_user: dupont, gpg_realname: 'MIG Dupont Investigator', gpg_useremail: 'dupont@localhost', gpg_pubkeyfile: 'dupont.pub', gpg_privkeyfile: 'dupont.priv' }
+    - { role: gpgkey_generate, gpg_user: dupond, gpg_realname: 'MIG dupond Investigator', gpg_useremail: 'dupond@localhost', gpg_pubkeyfile: 'dupond.pub', gpg_privkeyfile: 'dupond.priv' }
+    - mig-api
+
+- hosts: migscheduler
+  vars:
+    - mig_api_host: 192.168.101.60
+    - mig_db_host: 192.168.101.52
+    - mig_db_port: 5432
+    - mig_rabbitmq_host: 192.168.101.51
+#    - mig_rabbitmq_port: 5672
+    - mig_rabbitmq_port: 5671   ## using ssl
+    - mig_rabbitmqcert_push: true
+  roles:
+    - mig-scheduler
+
+- hosts: migagents
+  vars:
+    - mig_api_host: 192.168.101.60
+    - mig_db_host: 192.168.101.52
+    - mig_rabbitmq_host: 192.168.101.51
+#    - mig_rabbitmq_port: 5672
+    - mig_rabbitmq_port: 5671   ## using ssl
+    - mig_rabbitmqcert_push: true
+    - mig_rabbitmq_clientcacert: /etc/mig/ca.crt
+    - mig_rabbitmq_clientdir: /etc/mig
+    - mig_client_investigators:
+        - { realname: 'MIG Dupont Investigator', fingerprint: "{{ lookup('file', 'tmp/dupont-fingerprint') }}", pubkeyfile: "tmp/dupont.asc", pubkey: "{{ lookup('file', 'tmp/dupont.asc') }}", weight: 2 }
+        - { realname: 'MIG dupond Investigator', fingerprint: "{{ lookup('file', 'tmp/dupond-fingerprint') }}", pubkeyfile: "tmp/dupond.asc", pubkey: "{{ lookup('file', 'tmp/dupond.asc') }}", weight: 2 }
+    - mig_agentpkg_pull: true
+  roles:
+    - mig-agentsbuild
+
+- hosts: migclient2
+  vars:
+    - mig_api_host: 192.168.101.60
+## to retrieve mig-agent.cfg, agent.crt, agent.key, ca.crt
+    - mig_servername: vbuild
+  roles:
+    - migclient
+
+

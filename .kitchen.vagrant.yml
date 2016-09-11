@@ -1,0 +1,32 @@
+---
+driver:
+  name: vagrant
+  provider: <%= ENV['KITCHEN_PROVIDER'] || 'virtualbox' %>
+
+transport:
+  name: sftp
+
+provisioner:
+  name: ansible_playbook
+  roles_path: ../../roles
+  hosts: test-kitchen
+#  ansible_verbose: true
+  ansible_verbose: false
+  ansible_verbosity: 3
+  ansible_extra_flags: <%= ENV['ANSIBLE_EXTRA_FLAGS'] %>
+#  name: chef_solo
+
+platforms:
+## OK
+  - name: ubuntu-16.04
+  - name: ubuntu-14.04
+## test for agent windows/wixl ? no image available
+  - name: centos-7.1
+## FIXME! rabbitmq 3.1 vs 3.6 (centos7/epel)
+#  - name: 'centos/6'
+
+suites:
+  - name: default
+    run_list:
+    attributes:
+
