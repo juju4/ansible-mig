@@ -19,8 +19,8 @@
     - rabbitmq_conf_tcp_listeners_address: 127.0.0.1
     - rabbitmq_conf_ssl_listeners_address: 0.0.0.0
     - mig_client_investigators:
-        - { realname: 'MIG Dupont Investigator', fingerprint: "{{ lookup('file', '/tmp/kitchen/tmp/dupont-fingerprint') }}", pubkeyfile: "/tmp/kitchen/tmp/dupont.asc", pubkey: "{{ lookup('file', '/tmp/kitchen/tmp/dupont.asc') }}", weight: 2 }
-        - { realname: 'MIG dupond Investigator', fingerprint: "{{ lookup('file', '/tmp/kitchen/tmp/dupond-fingerprint') }}", pubkeyfile: "/tmp/kitchen/tmp/dupond.asc", pubkey: "{{ lookup('file', '/tmp/kitchen/tmp/dupond.asc') }}", weight: 2 }
+        - { realname: 'MIG Dupont Investigator', fingerprint: "{{ lookup('file', '/tmp/dupont-fingerprint') }}", pubkeyfile: "/tmp/dupont.asc", pubkey: "{{ lookup('file', '/tmp/dupont.asc') }}", weight: 2 }
+        - { realname: 'MIG dupond Investigator', fingerprint: "{{ lookup('file', '/tmp/dupond-fingerprint') }}", pubkeyfile: "/tmp/dupond.asc", pubkey: "{{ lookup('file', '/tmp/dupond.asc') }}", weight: 2 }
   roles:
 ## we need mig user existing before to be owner of gpg keys...
     - { role: juju4.adduser, adduser_user_name: "{{ mig_user }}", adduser_public_keys: [ /dev/null ] }
