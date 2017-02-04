@@ -1,4 +1,5 @@
-[![Build Status](https://travis-ci.org/juju4/ansible-mig.svg?branch=master)](https://travis-ci.org/juju4/ansible-mig)
+[![Build Status - Master](https://travis-ci.org/juju4/ansible-mig.svg?branch=master)](https://travis-ci.org/juju4/ansible-mig)
+[![Build Status - Devel](https://travis-ci.org/juju4/ansible-mig.svg?branch=devel)](https://travis-ci.org/juju4/ansible-mig/branches)
 
 # MIG ansible role
 
@@ -12,6 +13,7 @@ This role is just a master for a single-server setup or to show how to setup mul
 ### Ansible
 It was tested on the following versions:
  * 2.0
+ * 2.2
 
 ### Operating systems
 
@@ -26,15 +28,11 @@ For example
 - hosts: migserver
   roles:
     - Mayeu.RabbitMQ
-    - mig
+    - juju4.mig
 
 - hosts: migclient
   roles:
-    - { role: mig, mig_mode: client, mig_api_host: ansiblemigservername }
-# OR
-- hosts: migclient2
-  roles:
-    - { role: migclient, mig_api_host: ansiblemigservername }
+    - { role: juju4.migclient, mig_api_host: ansiblemigservername }
 
 ```
 
@@ -91,14 +89,14 @@ Default kitchen config (.kitchen.yml) is lxd-based, while (.kitchen.vagrant.yml)
 Once you ensured all necessary roles are present, You can test with:
 ```
 $ gem install kitchen-ansible kitchen-lxd_cli kitchen-sync kitchen-vagrant
-$ cd /path/to/roles/myrole
+$ cd /path/to/roles/juju4.mig
 $ kitchen verify
 $ kitchen login
 $ KITCHEN_YAML=".kitchen.vagrant.yml" kitchen verify
 ```
 or
 ```
-$ cd /path/to/roles/myrole/test/vagrant
+$ cd /path/to/roles/juju4.mig/test/vagrant
 $ ln -s Vagrantfile.multi Vagrantfile
 $ vagrant up
 $ vagrant ssh vrabbit
