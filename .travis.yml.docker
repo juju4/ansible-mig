@@ -11,6 +11,7 @@ env:
     version: 7
     init: /usr/lib/systemd/systemd
     run_opts: "--privileged --volume=/sys/fs/cgroup:/sys/fs/cgroup:ro"
+## FIXME! trusty+xenial stalling... https://travis-ci.org/juju4/ansible-mig/builds/198409727
   - distribution: ubuntu
     version: 16.04
     init: /lib/systemd/systemd
