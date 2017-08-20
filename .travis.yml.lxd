@@ -2,7 +2,7 @@
 dist: trusty
 sudo: required
 rvm:
-  - 2.2
+  - 2.4
 
 ## FIXME! abnormal behavior, centos7+trusty stalling at different points, xenial failing on a task passed on trusty https://travis-ci.org/juju4/ansible-mig/builds/198426947
 env:
