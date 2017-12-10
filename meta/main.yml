@@ -28,6 +28,7 @@ galaxy_info:
   - security
 dependencies:
   - juju4.redhat-epel
+  - juju4.golang
 ## for a single server setup
   - Mayeu.RabbitMQ
   - juju4.mig-postgres
