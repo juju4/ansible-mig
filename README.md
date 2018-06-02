@@ -14,10 +14,11 @@ This role is just a master for a single-server setup or to show how to setup mul
 It was tested on the following versions:
  * 2.0
  * 2.2
+ * 2.5
 
 ### Operating systems
 
-Verified with kitchen against ubuntu trusty, xenial and centos7
+Tested on Ubuntu 14.04, 16.04, 18.04 and centos7
 
 ## Example Playbook
 
