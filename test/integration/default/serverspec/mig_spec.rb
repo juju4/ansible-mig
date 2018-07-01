@@ -6,7 +6,10 @@ set :backend, :exec
 describe file('/home/_mig/.bashrc') do
   its(:content) { should match /GOPATH/ }
 end
-describe file('/home/_mig/.migrc') do
+describe file('/home/_mig/.migrc'), :if => os[:family] == 'ubuntu' && os[:release] == '14.04' do
+  its(:content) { should match /keyid/ }
+end
+describe file('/home/_mig/.migrc'), :if => os[:family] == 'ubuntu' && os[:release] == '16.04' do
   its(:content) { should match /keyid/ }
 end
 
