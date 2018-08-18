@@ -54,11 +54,11 @@ Finish install by
 ```
 $ sudo cp -R .gnupg /home/mig/; sudo chown -R mig /home/mig/.gnupg
 $ sudo -u mig -H -s
-$ $HOME/go/src/mig.ninja/mig/bin/linux/amd64/mig-console
+$ $HOME/go/src/github.com/mozilla/mig/bin/linux/amd64/mig-console
 ```
 2) run locally mig-agent or deploy it somewhere
 ```
-$GOPATH/src/mig.ninja/mig/bin/linux/amd64/mig-agent-latest
+$GOPATH/src/github.com/mozilla/mig/bin/linux/amd64/mig-agent-latest
 ```
 if server is withagent enabled, mig-agent should already be running
 ```
@@ -72,7 +72,7 @@ Some nrpe commands are included to help for monitoring.
 Post-install, check your migrc and run mig-console (as mig user)
 ```
 $ cat ~/.migrc
-$ $HOME/go/src/mig.ninja/mig/bin/linux/amd64/mig-console
+$ $HOME/go/src/github.com/mozilla/mig/bin/linux/amd64/mig-console
 ```
 
 ## Variables

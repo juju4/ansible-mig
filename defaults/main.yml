@@ -24,7 +24,7 @@ mig_user: "_mig"
 
 mig_gover: 1.6.2
 mig_gopath: "/home/{{ mig_user }}/go"
-mig_src: "{{ mig_gopath }}/src/mig.ninja/mig"
+mig_src: "{{ mig_gopath }}/src/github.com/mozilla/mig"
 mig_api_host: localhost
 #mig_api_port: 51664
 mig_api_port: 1664
@@ -87,7 +87,7 @@ migrc_user_fingerprint:
 
 
 ### client
-#mig_src: "{{ mig_gopath }}/src/mig.ninja/mig"
+#mig_src: "{{ mig_gopath }}/src/github.com/mozilla/mig"
 #mig_agent_bin: "{{ mig_src }}/{{ ansible_os_family }}/{{ ansible_architecture }}/mig-agent-latest"
 #mig_api_host: localhost
 #mig_api_port: 51664
