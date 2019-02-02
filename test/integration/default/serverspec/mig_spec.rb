@@ -12,9 +12,9 @@ end
 #describe file('/home/_mig/.migrc'), :if => os[:family] == 'ubuntu' && os[:release] == '16.04' do
 #  its(:content) { should match /keyid/ }
 #end
-describe file('/home/_mig/.migrc'), :if => os[:family] == 'ubuntu' && os[:release] == '18.04' do
-  its(:content) { should match /keyid/ }
-end
+#describe file('/home/_mig/.migrc'), :if => os[:family] == 'ubuntu' && os[:release] == '18.04' do
+#  its(:content) { should match /keyid/ }
+#end
 
 ### For some reason, stalling when called by serverspec. fine in CLI. mig has some progress bar that might affect / no way to disable it currently.
 ### time less than 1sec
