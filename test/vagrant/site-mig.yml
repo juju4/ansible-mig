@@ -15,18 +15,40 @@
 #    - rabbitmq_conf_tcp_listeners_address: 0.0.0.0
     - rabbitmq_conf_ssl_listeners_address: 0.0.0.0
     - mig_client_investigators:
-        - { realname: 'MIG Dupont Investigator', fingerprint: "{{ lookup('file', 'tmp/dupont-fingerprint') }}", pubkeyfile: "tmp/dupont.asc", pubkey: "{{ lookup('file', 'tmp/dupont.asc') }}", weight: 2 }
-        - { realname: 'MIG dupond Investigator', fingerprint: "{{ lookup('file', 'tmp/dupond-fingerprint') }}", pubkeyfile: "tmp/dupond.asc", pubkey: "{{ lookup('file', 'tmp/dupond.asc') }}", weight: 2 }
+        - { realname: 'MIG Dupont Investigator',
+            fingerprint: "{{ lookup('file', 'tmp/dupont-fingerprint') }}",
+            pubkeyfile: "tmp/dupont.asc",
+            pubkey: "{{ lookup('file', 'tmp/dupont.asc') }}",
+            weight: 2
+          }
+        - { realname: 'MIG dupond Investigator',
+            fingerprint: "{{ lookup('file', 'tmp/dupond-fingerprint') }}",
+            pubkeyfile: "tmp/dupond.asc",
+            pubkey: "{{ lookup('file', 'tmp/dupond.asc') }}",
+            weight: 2
+          }
 
   roles:
-    - { role: gpgkey_generate, gpg_user: dupont, gpg_realname: 'MIG Dupont Investigator', gpg_useremail: 'dupont@localhost', gpg_pubkeyfile: 'dupont.pub', gpg_privkeyfile: 'dupont.priv' }
-    - { role: gpgkey_generate, gpg_user: dupond, gpg_realname: 'MIG dupond Investigator', gpg_useremail: 'dupond@localhost', gpg_pubkeyfile: 'dupond.pub', gpg_privkeyfile: 'dupond.priv' }
+    - { role: juju4.gpgkey_generate,
+        gpg_user: dupont,
+        gpg_realname: 'MIG Dupont Investigator',
+        gpg_useremail: 'dupont@localhost',
+        gpg_pubkeyfile: 'dupont.pub',
+        gpg_privkeyfile: 'dupont.priv'
+      }
+    - { role: juju4.gpgkey_generate,
+        gpg_user: dupond,
+        gpg_realname: 'MIG dupond Investigator',
+        gpg_useremail: 'dupond@localhost',
+        gpg_pubkeyfile: 'dupond.pub',
+        gpg_privkeyfile: 'dupond.priv'
+      }
     - Mayeu.RabbitMQ
-    - mig
+    - juju4.mig
 
 - hosts: migclient
   roles:
-    - { role: migclient, mig_api_host: ansiblemigservername }
+    - { role: juju4.migclient, mig_api_host: ansiblemigservername }
 
 
 ## multi-tiers servers configuration
@@ -55,7 +77,7 @@
     - mig_rabbitmq_pull: true
   roles:
     - Mayeu.RabbitMQ
-    - mig-rabbitmq
+    - juju4.mig-rabbitmq
 
 - hosts: migpostgres
   vars:
@@ -63,7 +85,7 @@
     - mig_db_listen: "{{ mig_db_host }}"
     - mig_db_subnet_access: '192.168.101.0/24'
   roles:
-    - mig-postgres
+    - juju4.mig-postgres
 
 - hosts: migapi
   vars:
@@ -74,12 +96,34 @@
     - mig_nginx_use_ssl: false
     - gpg_generator_user: _mig
     - mig_client_investigators:
-        - { realname: 'MIG Dupont Investigator', fingerprint: "{{ lookup('file', 'tmp/dupont-fingerprint') }}", pubkeyfile: "tmp/dupont.asc", pubkey: "{{ lookup('file', 'tmp/dupont.asc') }}", weight: 2 }
-        - { realname: 'MIG dupond Investigator', fingerprint: "{{ lookup('file', 'tmp/dupond-fingerprint') }}", pubkeyfile: "tmp/dupond.asc", pubkey: "{{ lookup('file', 'tmp/dupond.asc') }}", weight: 2 }
+        - { realname: 'MIG Dupont Investigator',
+            fingerprint: "{{ lookup('file', 'tmp/dupont-fingerprint') }}",
+            pubkeyfile: "tmp/dupont.asc",
+            pubkey: "{{ lookup('file', 'tmp/dupont.asc') }}",
+            weight: 2
+          }
+        - { realname: 'MIG dupond Investigator',
+            fingerprint: "{{ lookup('file', 'tmp/dupond-fingerprint') }}",
+            pubkeyfile: "tmp/dupond.asc",
+            pubkey: "{{ lookup('file', 'tmp/dupond.asc') }}",
+            weight: 2
+          }
   roles:
-    - { role: gpgkey_generate, gpg_user: dupont, gpg_realname: 'MIG Dupont Investigator', gpg_useremail: 'dupont@localhost', gpg_pubkeyfile: 'dupont.pub', gpg_privkeyfile: 'dupont.priv' }
-    - { role: gpgkey_generate, gpg_user: dupond, gpg_realname: 'MIG dupond Investigator', gpg_useremail: 'dupond@localhost', gpg_pubkeyfile: 'dupond.pub', gpg_privkeyfile: 'dupond.priv' }
-    - mig-api
+    - { role: juju4.gpgkey_generate,
+        gpg_user: dupont,
+        gpg_realname: 'MIG Dupont Investigator',
+        gpg_useremail: 'dupont@localhost',
+        gpg_pubkeyfile: 'dupont.pub',
+        gpg_privkeyfile: 'dupont.priv'
+      }
+    - { role: juju4.gpgkey_generate,
+        gpg_user: dupond,
+        gpg_realname: 'MIG dupond Investigator',
+        gpg_useremail: 'dupond@localhost',
+        gpg_pubkeyfile: 'dupond.pub',
+        gpg_privkeyfile: 'dupond.priv'
+      }
+    - juju4.mig-api
 
 - hosts: migscheduler
   vars:
@@ -91,7 +135,7 @@
     - mig_rabbitmq_port: 5671   ## using ssl
     - mig_rabbitmqcert_push: true
   roles:
-    - mig-scheduler
+    - juju4.mig-scheduler
 
 - hosts: migagents
   vars:
@@ -104,11 +148,21 @@
     - mig_rabbitmq_clientcacert: /etc/mig/ca.crt
     - mig_rabbitmq_clientdir: /etc/mig
     - mig_client_investigators:
-        - { realname: 'MIG Dupont Investigator', fingerprint: "{{ lookup('file', 'tmp/dupont-fingerprint') }}", pubkeyfile: "tmp/dupont.asc", pubkey: "{{ lookup('file', 'tmp/dupont.asc') }}", weight: 2 }
-        - { realname: 'MIG dupond Investigator', fingerprint: "{{ lookup('file', 'tmp/dupond-fingerprint') }}", pubkeyfile: "tmp/dupond.asc", pubkey: "{{ lookup('file', 'tmp/dupond.asc') }}", weight: 2 }
+        - { realname: 'MIG Dupont Investigator',
+            fingerprint: "{{ lookup('file', 'tmp/dupont-fingerprint') }}",
+            pubkeyfile: "tmp/dupont.asc",
+            pubkey: "{{ lookup('file', 'tmp/dupont.asc') }}",
+            weight: 2
+          }
+        - { realname: 'MIG dupond Investigator',
+            fingerprint: "{{ lookup('file', 'tmp/dupond-fingerprint') }}",
+            pubkeyfile: "tmp/dupond.asc",
+            pubkey: "{{ lookup('file', 'tmp/dupond.asc') }}",
+            weight: 2
+          }
     - mig_agentpkg_pull: true
   roles:
-    - mig-agentsbuild
+    - juju4.mig-agentsbuild
 
 - hosts: migclient2
   vars:
@@ -116,6 +170,4 @@
 ## to retrieve mig-agent.cfg, agent.crt, agent.key, ca.crt
     - mig_servername: vbuild
   roles:
-    - migclient
-
-
+    - juju4.migclient

@@ -1,5 +1,6 @@
 ---
 galaxy_info:
+  role_name: mig
   author: juju4
   description: Mozilla Investi Gator
   license: BSD
@@ -28,7 +29,7 @@ galaxy_info:
   - web
   - security
 dependencies:
-  - juju4.redhat-epel
+  - juju4.redhat_epel
   - juju4.golang
 ## for a single server setup
   - Mayeu.RabbitMQ

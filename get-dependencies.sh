@@ -9,7 +9,7 @@ else
 rolesdir=$(dirname $0)/..
 fi
 
-[ ! -d $rolesdir/juju4.redhat-epel ] && git clone https://github.com/juju4/ansible-redhat-epel $rolesdir/juju4.redhat-epel
+[ ! -d $rolesdir/juju4.redhat_epel ] && git clone https://github.com/juju4/ansible-redhat-epel $rolesdir/juju4.redhat_epel
 [ ! -d $rolesdir/juju4.adduser ] && git clone https://github.com/juju4/ansible-adduser $rolesdir/juju4.adduser
 [ ! -d $rolesdir/juju4.gpgkey_generate ] && git clone https://github.com/juju4/ansible-gpgkey_generate $rolesdir/juju4.gpgkey_generate
 [ ! -d $rolesdir/playbook-rabbitmq ] && git clone https://github.com/juju4/ansible-playbook-rabbitmq $rolesdir/Mayeu.RabbitMQ

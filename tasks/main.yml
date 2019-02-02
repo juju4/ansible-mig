@@ -4,4 +4,3 @@
 
 #- include: client.yml
 #  when: mig_mode == 'client' or (mig_server_withagent is defined and mig_server_withagent)
-
