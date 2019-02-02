@@ -20,15 +20,15 @@
     - rabbitmq_conf_ssl_listeners_address: 0.0.0.0
     - mig_client_investigators:
         - { realname: 'MIG Dupont Investigator',
-            fingerprint: "{{ lookup('file', 'tmp/dupont-fingerprint') }}",
-            pubkeyfile: "tmp/dupont.asc",
-            pubkey: "{{ lookup('file', 'tmp/dupont.asc') }}",
+            fingerprint: "{{ lookup('file', '/tmp/dupont-fingerprint') }}",
+            pubkeyfile: "/tmp/dupont.asc",
+            pubkey: "{{ lookup('file', '/tmp/dupont.asc') }}",
             weight: 2
           }
         - { realname: 'MIG dupond Investigator',
-            fingerprint: "{{ lookup('file', 'tmp/dupond-fingerprint') }}",
-            pubkeyfile: "tmp/dupond.asc",
-            pubkey: "{{ lookup('file', 'tmp/dupond.asc') }}",
+            fingerprint: "{{ lookup('file', '/tmp/dupond-fingerprint') }}",
+            pubkeyfile: "/tmp/dupond.asc",
+            pubkey: "{{ lookup('file', '/tmp/dupond.asc') }}",
             weight: 2
           }
 
