@@ -1,7 +1,6 @@
 ---
 
 - hosts: all
-#- hosts: test-kitchen
   vars:
 #    - mig_user: mig
     - gpg_generator_user: "{{ mig_user }}"
